@@ -1,0 +1,136 @@
+syntax="proto3";
+
+package paxos;
+import "google/protobuf/Timestamp.proto";
+
+option go_package = "/paxos";
+
+message Ballot{
+	int32 SequenceNumber=1;
+	int32 ProcessID=2;
+}
+
+message Transaction{
+	string Sender=1;
+	string Reciever=2;
+	int32 Amount=3;
+}
+
+//(AcceptNum, AcceptSeq, AcceptVal)
+message AcceptLog{
+	Ballot Ballot=1;
+	int32 AcceptSeq=2; //sequence number
+	ClientReq AcceptVal=3;
+}
+
+
+// ⟨REQUEST,t,τ,c⟩
+message ClientReq{
+	Transaction Transaction=1;
+	google.protobuf.Timestamp Timestamp = 2;
+
+	string Client=3;
+}
+
+// ⟨REPLY,b,τ,c,r⟩, r=success/failed boolean flag
+message ClientResp{
+	Ballot Ballot=1;
+	google.protobuf.Timestamp Timestamp = 2;
+	string Client=3;
+	bool Success=4;
+}
+
+// ⟨PREPARE,b⟩
+message PrepareReq{
+	Ballot Ballot=1;
+}
+
+// ⟨ACK,b,AcceptLog⟩
+message PromiseAck{
+	Ballot Ballot=1;
+	repeated string AcceptLog=2;
+}
+
+// ⟨ACCEPT,b,s,m⟩
+message Accept{
+	Ballot Ballot=1;
+	int32 SequenceNumber=2;
+	ClientReq ClientReq=3;
+}
+// ⟨ACCEPTED,b,s,m,nb⟩
+message Accepted{
+	Ballot Ballot=1; 
+	int32 SequenceNumber=2;
+	ClientReq ClientReq=3;
+	int32 NBallot=4;
+}
+// ⟨COMMIT,b,s,m⟩
+message CommitMessage{
+	Ballot Ballot=1; 
+	int32 SequenceNumber=2;
+	ClientReq ClientReq=3;
+}
+message NewViewReq{
+Ballot Ballot=1; 
+}
+
+message NewView{
+	repeated string AcceptLog=1;
+}
+message NewViewUp{
+	int32 SequenceNumber=1;
+	AcceptLog AcceptLog=2;
+}
+message NewViewUpdated{
+	repeated NewViewUp NewViewUp=1;
+}
+
+message NewViewResp{
+	bool OK=1;
+}
+message IsAvailable{
+	bool Up=1;
+}
+
+message Balance{
+	string Balance=1;
+}
+
+message AllBalance{
+	repeated Balance Balance=1;
+}
+
+message Log{
+string Log=1;
+}
+
+message AllLogs{
+repeated string Log=1;
+}
+
+message ClientID{
+string ClientID=1;
+}
+
+message Empty{}
+
+service Paxos{
+	rpc ClientRequest(ClientReq) returns (ClientResp){};
+	
+	rpc PrepareRequest(PrepareReq) returns (PromiseAck){};
+	rpc AcceptRequest(Accept) returns (Accepted){};
+	rpc Commit(CommitMessage) returns (Empty){};
+
+	rpc NewViewRequest(NewViewReq) returns (NewView);
+	rpc NewViewUpdate(Ballot) returns (Empty){};
+
+	rpc UpdateAvailability(IsAvailable) returns (IsAvailable);
+
+	rpc PrintDB(Empty) returns (AllBalance);
+	rpc PrintLogs(Empty)returns(AllLogs); 
+	rpc PrintBalance(ClientID)returns (Balance);
+
+	rpc Flush(Empty)returns(Empty); 
+	rpc GetCurrentLeader(Empty)returns (Ballot);
+}
+
