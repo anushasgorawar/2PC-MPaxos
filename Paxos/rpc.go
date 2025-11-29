@@ -13,10 +13,12 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// type Clusters struct {
-// 	Id         int
-// 	grpcClient map[string]PaxosClient
-// }
+type Cluster struct {
+	Id            int
+	Leader        int
+	GrpcClientMap map[string]PaxosClient
+}
+
 type Server struct {
 	Id               int
 	ClusterID        int
@@ -46,7 +48,7 @@ type Server struct {
 	PrepareTimer          *time.Timer
 	ElectionTimerDuration time.Duration
 	MajorityAccepted      chan struct{}
-	// Clusters              []Clusters
+	AllClusters           map[int]Cluster
 	UnimplementedPaxosServer
 }
 

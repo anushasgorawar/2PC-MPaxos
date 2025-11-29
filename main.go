@@ -14,8 +14,8 @@ func main() {
 	if err := s.InitialisePaxosNode(s.Clients); err != nil {
 		log.Fatal("Could not initialise the server: ", err)
 	}
-	go s.Checkelectiontimer()
-	go s.SendAccepts()
+	// go s.Checkelectiontimer()
+	// go s.SendAccepts()
 	for {
 	}
 

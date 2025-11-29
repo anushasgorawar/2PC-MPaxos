@@ -1,7 +1,6 @@
 package paxos
 
 import (
-	"context"
 	"flag"
 	"log"
 	"math"
@@ -13,7 +12,7 @@ import (
 )
 
 var (
-	n     = 5
+	n     = 3
 	Nodes = map[int]string{
 		1: "localhost:8080",
 		2: "localhost:8081",
@@ -89,29 +88,19 @@ func (s *Server) InitialisePaxosNode(clients []string) error {
 
 func (s *Server) InitialiseClients() {
 	log.Println("Initialising gRpc clients to other nodes..")
-	for i := 1; i < n+1; i++ {
-		if Nodes[i] != s.Addr {
-			ctx, cancelFunc := context.WithTimeout(context.Background(), 2*time.Second)
-			defer cancelFunc()
-			conn, err := grpc.DialContext(ctx, Nodes[i], grpc.WithInsecure(), grpc.WithReturnConnectionError())
-			if err != nil {
-				// Available[i]=false
-				log.Println("TIMEOUT, Could not connect: ", err)
-				continue
-			}
-			// defer conn.Close()
-			grpcClient := NewPaxosClient(conn)
-			s.GrpcClientMap[Nodes[i]] = grpcClient
-			log.Println("GRPC client ", s.GrpcClientMap)
-		}
-	}
+
+	s.AllClusters = make(map[int]Cluster)
+	s.CreateClusterGRPCMap()
+
+	log.Println(s.AllClusters)
+	log.Println(s.GrpcClientMap)
 	s.ElectionTimerDuration = s.NextElectionTimeout()
 	// s.ElectionTimerDuration = (2 * time.Second) + (time.Duration(s.Id)*time.Second)*2
 	s.Tp = (1 * time.Second)
 	log.Printf("ElectionTimerDuration=%v", s.ElectionTimerDuration)
 
-	if s.Id == 1 {
-		s.ElectionTimer = time.NewTimer(2 * time.Second)
+	if s.Id == 1 || s.Id == 4 || s.Id == 7 {
+		s.ElectionTimer = time.NewTimer(1 * time.Second)
 	} else {
 		s.ElectionTimer = time.NewTimer(s.ElectionTimerDuration)
 	}

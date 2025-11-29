@@ -19,7 +19,7 @@ func (s *Server) PrintDB(ctx context.Context, empty *Empty) (*AllBalance, error)
 }
 
 func (s *Server) PrintBalance(ctx context.Context, clientID *ClientID) (*Balance, error) {
-	balance, err := s.Datastore.GetValue(s.Datastore.Server, clientID.ClientID)
+	balance, err := s.Datastore.GetValue(clientID.ClientID, s.Datastore.Server)
 	if err != nil {
 		log.Println("Error fetching balance of client: ", clientID.ClientID)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	paxos "github.com/F25-CSE535/2pc-anushasgorawar/Paxos"
@@ -34,7 +35,7 @@ var (
 
 func main() {
 
-	// InitGRPCMap()
+	InitGRPCMap()
 
 	// filePath := "CSE535-F25-Project-1-Testcases.csv"
 	filePath := "testcases.csv"
@@ -45,7 +46,7 @@ func main() {
 		return
 	}
 
-	for set := 0; set < len(sets); set++ {
+	for set := 0; set < len(sets); {
 		fmt.Println("Choose an option:\n1. PrintDB\n2. PrintBalance\nDefault: Continue to the next set")
 
 		var choice int
@@ -68,19 +69,37 @@ func main() {
 			if err != nil {
 				log.Println("Could not PrintStatus", err)
 			}
-
 		default:
 			if set >= len(sets) {
 				return
 			}
 			updateAvailability(availablenodes[set])
 			fmt.Println("set's avaialble nodes: ", availablenodes[set])
-
 			fmt.Println("Transactions: ", sets[set])
+			i := len(sets[set])
+			var wg sync.WaitGroup
+			for j := 0; j < i; j++ {
+				time.Sleep(1 * time.Second)
+				for _, transactions := range sets[set][j] {
+					wg.Add(1)
+					t := transactions
+					switch t.Sender {
+					case "F":
 
+					case "R":
+
+					default:
+
+					}
+				}
+			}
+			wg.Wait()
 		}
+		set++
+
 	}
 }
+
 func InitGRPCMap() {
 	for i := 1; i < n+1; i++ {
 		ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
@@ -115,3 +134,50 @@ func updateAvailability(availableNodes []int) error {
 	}
 	return nil
 }
+
+// func RunTransactions(client string) error {
+// 	// log.Println("Running there")
+// 	for {
+// 		transactions := <-ClientReqestBuffer[client]
+// 		for _, transaction := range transactions {
+// 			idlemu.Lock()
+// 			idle++
+// 			idlemu.Unlock()
+// 			clientTimer := time.NewTimer(ClientTimerDuration)
+// 			message := requests.ClientReq{
+// 				Transaction: transaction,
+// 				Timestamp:   timestamppb.Now(),
+// 				Client:      transaction.Sender,
+// 			}
+// 			resChannel := make(chan struct{}, 1)
+// 			go func() {
+// 				leader := GrpcClientMap[Leader]
+// 				ctx, _ := context.WithTimeout(context.Background(), ClientTimerDuration)
+// 				res, err := leader.ClientRequest(ctx, &message)
+// 				fmt.Println("Res:", res)
+// 				if err != nil {
+// 					log.Printf("Error response from server: %v", err)
+// 					return
+// 				}
+// 				if res == nil {
+// 					log.Printf("Nil Response from leader")
+// 					return
+// 				}
+// 				Leader = int(res.Ballot.ProcessID)
+// 				resChannel <- struct{}{}
+// 				log.Printf("Response from server: %v for client %v", res.Success, res.Client)
+// 			}()
+// 			select {
+// 			case <-resChannel:
+// 				idlemu.Lock()
+// 				idle--
+// 				idlemu.Unlock()
+// 			case <-clientTimer.C:
+// 				fmt.Printf("No Response from server for client %v\n", client)
+// 				fmt.Println("Client Request Timeout. ")
+// 				BroadcastClientrequest(client, &message)
+// 			}
+// 		}
+
+// 	}
+// }

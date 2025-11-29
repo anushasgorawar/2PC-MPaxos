@@ -1,13 +1,16 @@
 package paxos
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	grpc "google.golang.org/grpc"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -154,4 +157,51 @@ func (server *Server) ParseAcceptLog(s string, currBallot *Ballot) (*AcceptLog, 
 			Client:    client,
 		},
 	}, nil
+}
+
+func (s *Server) CreateClusterGRPCMap() {
+
+	for i := 1; i < n+1; i++ {
+		if Nodes[i] != s.Addr {
+			ctx, cancelFunc := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancelFunc()
+			conn, err := grpc.DialContext(ctx, Nodes[i], grpc.WithInsecure(), grpc.WithReturnConnectionError())
+			if err != nil {
+				log.Println("TIMEOUT, Could not connect: ", err)
+				continue
+			}
+			grpcClient := NewPaxosClient(conn)
+			s.GrpcClientMap[Nodes[i]] = grpcClient
+			log.Println("GRPC client ", s.GrpcClientMap)
+		}
+	}
+	//For each cluster
+	for i := range Clusters {
+		//if different cluster
+		if i != s.ClusterID {
+			cluster := &Cluster{
+				Id:            i,
+				Leader:        Clusters[i][0],
+				GrpcClientMap: map[string]PaxosClient{},
+			}
+			for j := range Clusters[i] {
+				cluster.GrpcClientMap[Nodes[i]] = s.GrpcClientMap[Nodes[j]]
+			}
+			s.AllClusters[i] = *cluster
+		} else {
+			//if same cluster
+			for j := range Clusters[i] {
+				if j != s.Id {
+					ctx, cancelFunc := context.WithTimeout(context.Background(), 2*time.Second)
+					defer cancelFunc()
+					conn, err := grpc.DialContext(ctx, Nodes[i], grpc.WithInsecure(), grpc.WithReturnConnectionError())
+					if err != nil {
+						log.Println("TIMEOUT, Could not connect: ", err)
+						continue
+					}
+					s.GrpcClientMap[Nodes[i]] = NewPaxosClient(conn)
+				}
+			}
+		}
+	}
 }
