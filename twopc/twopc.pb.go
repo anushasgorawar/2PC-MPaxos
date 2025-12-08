@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v3.17.0
-// source: paxos.proto
+// source: twopc.proto
 
-package paxos
+package twopc
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -32,7 +32,7 @@ type Ballot struct {
 
 func (x *Ballot) Reset() {
 	*x = Ballot{}
-	mi := &file_paxos_proto_msgTypes[0]
+	mi := &file_twopc_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *Ballot) String() string {
 func (*Ballot) ProtoMessage() {}
 
 func (x *Ballot) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[0]
+	mi := &file_twopc_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *Ballot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Ballot.ProtoReflect.Descriptor instead.
 func (*Ballot) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{0}
+	return file_twopc_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Ballot) GetSequenceNumber() int32 {
@@ -85,7 +85,7 @@ type Transaction struct {
 
 func (x *Transaction) Reset() {
 	*x = Transaction{}
-	mi := &file_paxos_proto_msgTypes[1]
+	mi := &file_twopc_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -97,7 +97,7 @@ func (x *Transaction) String() string {
 func (*Transaction) ProtoMessage() {}
 
 func (x *Transaction) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[1]
+	mi := &file_twopc_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -110,7 +110,7 @@ func (x *Transaction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Transaction.ProtoReflect.Descriptor instead.
 func (*Transaction) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{1}
+	return file_twopc_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Transaction) GetSender() string {
@@ -140,13 +140,14 @@ type AcceptLog struct {
 	Ballot        *Ballot                `protobuf:"bytes,1,opt,name=Ballot,proto3" json:"Ballot,omitempty"`
 	AcceptSeq     int32                  `protobuf:"varint,2,opt,name=AcceptSeq,proto3" json:"AcceptSeq,omitempty"` //sequence number
 	AcceptVal     *ClientReq             `protobuf:"bytes,3,opt,name=AcceptVal,proto3" json:"AcceptVal,omitempty"`
+	PA            string                 `protobuf:"bytes,4,opt,name=PA,proto3" json:"PA,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AcceptLog) Reset() {
 	*x = AcceptLog{}
-	mi := &file_paxos_proto_msgTypes[2]
+	mi := &file_twopc_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -158,7 +159,7 @@ func (x *AcceptLog) String() string {
 func (*AcceptLog) ProtoMessage() {}
 
 func (x *AcceptLog) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[2]
+	mi := &file_twopc_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -171,7 +172,7 @@ func (x *AcceptLog) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcceptLog.ProtoReflect.Descriptor instead.
 func (*AcceptLog) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{2}
+	return file_twopc_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AcceptLog) GetBallot() *Ballot {
@@ -195,6 +196,13 @@ func (x *AcceptLog) GetAcceptVal() *ClientReq {
 	return nil
 }
 
+func (x *AcceptLog) GetPA() string {
+	if x != nil {
+		return x.PA
+	}
+	return ""
+}
+
 // ⟨REQUEST,t,τ,c⟩
 type ClientReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -207,7 +215,7 @@ type ClientReq struct {
 
 func (x *ClientReq) Reset() {
 	*x = ClientReq{}
-	mi := &file_paxos_proto_msgTypes[3]
+	mi := &file_twopc_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -219,7 +227,7 @@ func (x *ClientReq) String() string {
 func (*ClientReq) ProtoMessage() {}
 
 func (x *ClientReq) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[3]
+	mi := &file_twopc_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -232,7 +240,7 @@ func (x *ClientReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientReq.ProtoReflect.Descriptor instead.
 func (*ClientReq) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{3}
+	return file_twopc_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ClientReq) GetTransaction() *Transaction {
@@ -269,7 +277,7 @@ type ClientResp struct {
 
 func (x *ClientResp) Reset() {
 	*x = ClientResp{}
-	mi := &file_paxos_proto_msgTypes[4]
+	mi := &file_twopc_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -281,7 +289,7 @@ func (x *ClientResp) String() string {
 func (*ClientResp) ProtoMessage() {}
 
 func (x *ClientResp) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[4]
+	mi := &file_twopc_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -294,7 +302,7 @@ func (x *ClientResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientResp.ProtoReflect.Descriptor instead.
 func (*ClientResp) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{4}
+	return file_twopc_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ClientResp) GetBallot() *Ballot {
@@ -335,7 +343,7 @@ type PrepareReq struct {
 
 func (x *PrepareReq) Reset() {
 	*x = PrepareReq{}
-	mi := &file_paxos_proto_msgTypes[5]
+	mi := &file_twopc_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -347,7 +355,7 @@ func (x *PrepareReq) String() string {
 func (*PrepareReq) ProtoMessage() {}
 
 func (x *PrepareReq) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[5]
+	mi := &file_twopc_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -360,7 +368,7 @@ func (x *PrepareReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PrepareReq.ProtoReflect.Descriptor instead.
 func (*PrepareReq) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{5}
+	return file_twopc_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *PrepareReq) GetBallot() *Ballot {
@@ -381,7 +389,7 @@ type PromiseAck struct {
 
 func (x *PromiseAck) Reset() {
 	*x = PromiseAck{}
-	mi := &file_paxos_proto_msgTypes[6]
+	mi := &file_twopc_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -393,7 +401,7 @@ func (x *PromiseAck) String() string {
 func (*PromiseAck) ProtoMessage() {}
 
 func (x *PromiseAck) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[6]
+	mi := &file_twopc_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -406,7 +414,7 @@ func (x *PromiseAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PromiseAck.ProtoReflect.Descriptor instead.
 func (*PromiseAck) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{6}
+	return file_twopc_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PromiseAck) GetBallot() *Ballot {
@@ -429,13 +437,14 @@ type Accept struct {
 	Ballot         *Ballot                `protobuf:"bytes,1,opt,name=Ballot,proto3" json:"Ballot,omitempty"`
 	SequenceNumber int32                  `protobuf:"varint,2,opt,name=SequenceNumber,proto3" json:"SequenceNumber,omitempty"`
 	ClientReq      *ClientReq             `protobuf:"bytes,3,opt,name=ClientReq,proto3" json:"ClientReq,omitempty"`
+	PA             string                 `protobuf:"bytes,4,opt,name=PA,proto3" json:"PA,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Accept) Reset() {
 	*x = Accept{}
-	mi := &file_paxos_proto_msgTypes[7]
+	mi := &file_twopc_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -447,7 +456,7 @@ func (x *Accept) String() string {
 func (*Accept) ProtoMessage() {}
 
 func (x *Accept) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[7]
+	mi := &file_twopc_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -460,7 +469,7 @@ func (x *Accept) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Accept.ProtoReflect.Descriptor instead.
 func (*Accept) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{7}
+	return file_twopc_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Accept) GetBallot() *Ballot {
@@ -484,6 +493,13 @@ func (x *Accept) GetClientReq() *ClientReq {
 	return nil
 }
 
+func (x *Accept) GetPA() string {
+	if x != nil {
+		return x.PA
+	}
+	return ""
+}
+
 // ⟨ACCEPTED,b,s,m,nb⟩
 type Accepted struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
@@ -497,7 +513,7 @@ type Accepted struct {
 
 func (x *Accepted) Reset() {
 	*x = Accepted{}
-	mi := &file_paxos_proto_msgTypes[8]
+	mi := &file_twopc_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -509,7 +525,7 @@ func (x *Accepted) String() string {
 func (*Accepted) ProtoMessage() {}
 
 func (x *Accepted) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[8]
+	mi := &file_twopc_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -522,7 +538,7 @@ func (x *Accepted) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Accepted.ProtoReflect.Descriptor instead.
 func (*Accepted) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{8}
+	return file_twopc_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Accepted) GetBallot() *Ballot {
@@ -565,7 +581,7 @@ type CommitMessage struct {
 
 func (x *CommitMessage) Reset() {
 	*x = CommitMessage{}
-	mi := &file_paxos_proto_msgTypes[9]
+	mi := &file_twopc_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -577,7 +593,7 @@ func (x *CommitMessage) String() string {
 func (*CommitMessage) ProtoMessage() {}
 
 func (x *CommitMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[9]
+	mi := &file_twopc_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -590,7 +606,7 @@ func (x *CommitMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitMessage.ProtoReflect.Descriptor instead.
 func (*CommitMessage) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{9}
+	return file_twopc_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *CommitMessage) GetBallot() *Ballot {
@@ -623,7 +639,7 @@ type NewViewReq struct {
 
 func (x *NewViewReq) Reset() {
 	*x = NewViewReq{}
-	mi := &file_paxos_proto_msgTypes[10]
+	mi := &file_twopc_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -635,7 +651,7 @@ func (x *NewViewReq) String() string {
 func (*NewViewReq) ProtoMessage() {}
 
 func (x *NewViewReq) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[10]
+	mi := &file_twopc_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -648,7 +664,7 @@ func (x *NewViewReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewViewReq.ProtoReflect.Descriptor instead.
 func (*NewViewReq) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{10}
+	return file_twopc_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *NewViewReq) GetBallot() *Ballot {
@@ -667,7 +683,7 @@ type NewView struct {
 
 func (x *NewView) Reset() {
 	*x = NewView{}
-	mi := &file_paxos_proto_msgTypes[11]
+	mi := &file_twopc_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -679,7 +695,7 @@ func (x *NewView) String() string {
 func (*NewView) ProtoMessage() {}
 
 func (x *NewView) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[11]
+	mi := &file_twopc_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -692,7 +708,7 @@ func (x *NewView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewView.ProtoReflect.Descriptor instead.
 func (*NewView) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{11}
+	return file_twopc_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *NewView) GetAcceptLog() []string {
@@ -712,7 +728,7 @@ type NewViewUp struct {
 
 func (x *NewViewUp) Reset() {
 	*x = NewViewUp{}
-	mi := &file_paxos_proto_msgTypes[12]
+	mi := &file_twopc_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -724,7 +740,7 @@ func (x *NewViewUp) String() string {
 func (*NewViewUp) ProtoMessage() {}
 
 func (x *NewViewUp) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[12]
+	mi := &file_twopc_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -737,7 +753,7 @@ func (x *NewViewUp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewViewUp.ProtoReflect.Descriptor instead.
 func (*NewViewUp) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{12}
+	return file_twopc_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *NewViewUp) GetSequenceNumber() int32 {
@@ -763,7 +779,7 @@ type NewViewUpdated struct {
 
 func (x *NewViewUpdated) Reset() {
 	*x = NewViewUpdated{}
-	mi := &file_paxos_proto_msgTypes[13]
+	mi := &file_twopc_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -775,7 +791,7 @@ func (x *NewViewUpdated) String() string {
 func (*NewViewUpdated) ProtoMessage() {}
 
 func (x *NewViewUpdated) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[13]
+	mi := &file_twopc_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -788,7 +804,7 @@ func (x *NewViewUpdated) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewViewUpdated.ProtoReflect.Descriptor instead.
 func (*NewViewUpdated) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{13}
+	return file_twopc_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *NewViewUpdated) GetNewViewUp() []*NewViewUp {
@@ -807,7 +823,7 @@ type NewViewResp struct {
 
 func (x *NewViewResp) Reset() {
 	*x = NewViewResp{}
-	mi := &file_paxos_proto_msgTypes[14]
+	mi := &file_twopc_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -819,7 +835,7 @@ func (x *NewViewResp) String() string {
 func (*NewViewResp) ProtoMessage() {}
 
 func (x *NewViewResp) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[14]
+	mi := &file_twopc_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -832,7 +848,7 @@ func (x *NewViewResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewViewResp.ProtoReflect.Descriptor instead.
 func (*NewViewResp) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{14}
+	return file_twopc_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *NewViewResp) GetOK() bool {
@@ -851,7 +867,7 @@ type IsAvailable struct {
 
 func (x *IsAvailable) Reset() {
 	*x = IsAvailable{}
-	mi := &file_paxos_proto_msgTypes[15]
+	mi := &file_twopc_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -863,7 +879,7 @@ func (x *IsAvailable) String() string {
 func (*IsAvailable) ProtoMessage() {}
 
 func (x *IsAvailable) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[15]
+	mi := &file_twopc_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -876,7 +892,7 @@ func (x *IsAvailable) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IsAvailable.ProtoReflect.Descriptor instead.
 func (*IsAvailable) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{15}
+	return file_twopc_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *IsAvailable) GetUp() bool {
@@ -895,7 +911,7 @@ type Balance struct {
 
 func (x *Balance) Reset() {
 	*x = Balance{}
-	mi := &file_paxos_proto_msgTypes[16]
+	mi := &file_twopc_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -907,7 +923,7 @@ func (x *Balance) String() string {
 func (*Balance) ProtoMessage() {}
 
 func (x *Balance) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[16]
+	mi := &file_twopc_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -920,7 +936,7 @@ func (x *Balance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Balance.ProtoReflect.Descriptor instead.
 func (*Balance) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{16}
+	return file_twopc_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Balance) GetBalance() string {
@@ -939,7 +955,7 @@ type AllBalance struct {
 
 func (x *AllBalance) Reset() {
 	*x = AllBalance{}
-	mi := &file_paxos_proto_msgTypes[17]
+	mi := &file_twopc_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -951,7 +967,7 @@ func (x *AllBalance) String() string {
 func (*AllBalance) ProtoMessage() {}
 
 func (x *AllBalance) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[17]
+	mi := &file_twopc_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -964,7 +980,7 @@ func (x *AllBalance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AllBalance.ProtoReflect.Descriptor instead.
 func (*AllBalance) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{17}
+	return file_twopc_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *AllBalance) GetBalance() []*Balance {
@@ -983,7 +999,7 @@ type Log struct {
 
 func (x *Log) Reset() {
 	*x = Log{}
-	mi := &file_paxos_proto_msgTypes[18]
+	mi := &file_twopc_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -995,7 +1011,7 @@ func (x *Log) String() string {
 func (*Log) ProtoMessage() {}
 
 func (x *Log) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[18]
+	mi := &file_twopc_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1008,7 +1024,7 @@ func (x *Log) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log.ProtoReflect.Descriptor instead.
 func (*Log) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{18}
+	return file_twopc_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *Log) GetLog() string {
@@ -1027,7 +1043,7 @@ type AllLogs struct {
 
 func (x *AllLogs) Reset() {
 	*x = AllLogs{}
-	mi := &file_paxos_proto_msgTypes[19]
+	mi := &file_twopc_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1039,7 +1055,7 @@ func (x *AllLogs) String() string {
 func (*AllLogs) ProtoMessage() {}
 
 func (x *AllLogs) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[19]
+	mi := &file_twopc_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1052,7 +1068,7 @@ func (x *AllLogs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AllLogs.ProtoReflect.Descriptor instead.
 func (*AllLogs) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{19}
+	return file_twopc_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *AllLogs) GetLog() []string {
@@ -1071,7 +1087,7 @@ type ClientID struct {
 
 func (x *ClientID) Reset() {
 	*x = ClientID{}
-	mi := &file_paxos_proto_msgTypes[20]
+	mi := &file_twopc_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1083,7 +1099,7 @@ func (x *ClientID) String() string {
 func (*ClientID) ProtoMessage() {}
 
 func (x *ClientID) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[20]
+	mi := &file_twopc_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1096,7 +1112,7 @@ func (x *ClientID) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientID.ProtoReflect.Descriptor instead.
 func (*ClientID) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{20}
+	return file_twopc_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ClientID) GetClientID() string {
@@ -1104,6 +1120,50 @@ func (x *ClientID) GetClientID() string {
 		return x.ClientID
 	}
 	return ""
+}
+
+type ClientIDs struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ClientID      []*ClientID            `protobuf:"bytes,1,rep,name=ClientID,proto3" json:"ClientID,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClientIDs) Reset() {
+	*x = ClientIDs{}
+	mi := &file_twopc_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClientIDs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClientIDs) ProtoMessage() {}
+
+func (x *ClientIDs) ProtoReflect() protoreflect.Message {
+	mi := &file_twopc_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClientIDs.ProtoReflect.Descriptor instead.
+func (*ClientIDs) Descriptor() ([]byte, []int) {
+	return file_twopc_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *ClientIDs) GetClientID() []*ClientID {
+	if x != nil {
+		return x.ClientID
+	}
+	return nil
 }
 
 type Empty struct {
@@ -1114,7 +1174,7 @@ type Empty struct {
 
 func (x *Empty) Reset() {
 	*x = Empty{}
-	mi := &file_paxos_proto_msgTypes[21]
+	mi := &file_twopc_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1126,7 +1186,7 @@ func (x *Empty) String() string {
 func (*Empty) ProtoMessage() {}
 
 func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_paxos_proto_msgTypes[21]
+	mi := &file_twopc_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1139,65 +1199,319 @@ func (x *Empty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Empty.ProtoReflect.Descriptor instead.
 func (*Empty) Descriptor() ([]byte, []int) {
-	return file_paxos_proto_rawDescGZIP(), []int{21}
+	return file_twopc_proto_rawDescGZIP(), []int{22}
 }
 
-var File_paxos_proto protoreflect.FileDescriptor
+type ClientReadReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Client        string                 `protobuf:"bytes,1,opt,name=Client,proto3" json:"Client,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
 
-const file_paxos_proto_rawDesc = "" +
+func (x *ClientReadReq) Reset() {
+	*x = ClientReadReq{}
+	mi := &file_twopc_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClientReadReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClientReadReq) ProtoMessage() {}
+
+func (x *ClientReadReq) ProtoReflect() protoreflect.Message {
+	mi := &file_twopc_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClientReadReq.ProtoReflect.Descriptor instead.
+func (*ClientReadReq) Descriptor() ([]byte, []int) {
+	return file_twopc_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *ClientReadReq) GetClient() string {
+	if x != nil {
+		return x.Client
+	}
+	return ""
+}
+
+type ClientReadResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Balance       int32                  `protobuf:"varint,1,opt,name=Balance,proto3" json:"Balance,omitempty"`
+	Ballot        *Ballot                `protobuf:"bytes,2,opt,name=Ballot,proto3" json:"Ballot,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClientReadResp) Reset() {
+	*x = ClientReadResp{}
+	mi := &file_twopc_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClientReadResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClientReadResp) ProtoMessage() {}
+
+func (x *ClientReadResp) ProtoReflect() protoreflect.Message {
+	mi := &file_twopc_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClientReadResp.ProtoReflect.Descriptor instead.
+func (*ClientReadResp) Descriptor() ([]byte, []int) {
+	return file_twopc_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *ClientReadResp) GetBalance() int32 {
+	if x != nil {
+		return x.Balance
+	}
+	return 0
+}
+
+func (x *ClientReadResp) GetBallot() *Ballot {
+	if x != nil {
+		return x.Ballot
+	}
+	return nil
+}
+
+type TwoPCMessage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Transaction   *Transaction           `protobuf:"bytes,1,opt,name=Transaction,proto3" json:"Transaction,omitempty"`
+	ClientRequest *ClientReq             `protobuf:"bytes,2,opt,name=ClientRequest,proto3" json:"ClientRequest,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TwoPCMessage) Reset() {
+	*x = TwoPCMessage{}
+	mi := &file_twopc_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TwoPCMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TwoPCMessage) ProtoMessage() {}
+
+func (x *TwoPCMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_twopc_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TwoPCMessage.ProtoReflect.Descriptor instead.
+func (*TwoPCMessage) Descriptor() ([]byte, []int) {
+	return file_twopc_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *TwoPCMessage) GetTransaction() *Transaction {
+	if x != nil {
+		return x.Transaction
+	}
+	return nil
+}
+
+func (x *TwoPCMessage) GetClientRequest() *ClientReq {
+	if x != nil {
+		return x.ClientRequest
+	}
+	return nil
+}
+
+type Prepared struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Prepared      bool                   `protobuf:"varint,1,opt,name=Prepared,proto3" json:"Prepared,omitempty"`
+	Transaction   *Transaction           `protobuf:"bytes,2,opt,name=Transaction,proto3" json:"Transaction,omitempty"`
+	ClientRequest *ClientReq             `protobuf:"bytes,3,opt,name=ClientRequest,proto3" json:"ClientRequest,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Prepared) Reset() {
+	*x = Prepared{}
+	mi := &file_twopc_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Prepared) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Prepared) ProtoMessage() {}
+
+func (x *Prepared) ProtoReflect() protoreflect.Message {
+	mi := &file_twopc_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Prepared.ProtoReflect.Descriptor instead.
+func (*Prepared) Descriptor() ([]byte, []int) {
+	return file_twopc_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *Prepared) GetPrepared() bool {
+	if x != nil {
+		return x.Prepared
+	}
+	return false
+}
+
+func (x *Prepared) GetTransaction() *Transaction {
+	if x != nil {
+		return x.Transaction
+	}
+	return nil
+}
+
+func (x *Prepared) GetClientRequest() *ClientReq {
+	if x != nil {
+		return x.ClientRequest
+	}
+	return nil
+}
+
+type Ack struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ack           bool                   `protobuf:"varint,1,opt,name=Ack,proto3" json:"Ack,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Ack) Reset() {
+	*x = Ack{}
+	mi := &file_twopc_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Ack) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Ack) ProtoMessage() {}
+
+func (x *Ack) ProtoReflect() protoreflect.Message {
+	mi := &file_twopc_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Ack.ProtoReflect.Descriptor instead.
+func (*Ack) Descriptor() ([]byte, []int) {
+	return file_twopc_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *Ack) GetAck() bool {
+	if x != nil {
+		return x.Ack
+	}
+	return false
+}
+
+var File_twopc_proto protoreflect.FileDescriptor
+
+const file_twopc_proto_rawDesc = "" +
 	"\n" +
-	"\vpaxos.proto\x12\x05paxos\x1a\x1fgoogle/protobuf/Timestamp.proto\"N\n" +
+	"\vtwopc.proto\x12\x05twopc\x1a\x1fgoogle/protobuf/Timestamp.proto\"N\n" +
 	"\x06Ballot\x12&\n" +
 	"\x0eSequenceNumber\x18\x01 \x01(\x05R\x0eSequenceNumber\x12\x1c\n" +
 	"\tProcessID\x18\x02 \x01(\x05R\tProcessID\"Y\n" +
 	"\vTransaction\x12\x16\n" +
 	"\x06Sender\x18\x01 \x01(\tR\x06Sender\x12\x1a\n" +
 	"\bReciever\x18\x02 \x01(\tR\bReciever\x12\x16\n" +
-	"\x06Amount\x18\x03 \x01(\x05R\x06Amount\"\x80\x01\n" +
+	"\x06Amount\x18\x03 \x01(\x05R\x06Amount\"\x90\x01\n" +
 	"\tAcceptLog\x12%\n" +
-	"\x06Ballot\x18\x01 \x01(\v2\r.paxos.BallotR\x06Ballot\x12\x1c\n" +
+	"\x06Ballot\x18\x01 \x01(\v2\r.twopc.BallotR\x06Ballot\x12\x1c\n" +
 	"\tAcceptSeq\x18\x02 \x01(\x05R\tAcceptSeq\x12.\n" +
-	"\tAcceptVal\x18\x03 \x01(\v2\x10.paxos.ClientReqR\tAcceptVal\"\x93\x01\n" +
+	"\tAcceptVal\x18\x03 \x01(\v2\x10.twopc.ClientReqR\tAcceptVal\x12\x0e\n" +
+	"\x02PA\x18\x04 \x01(\tR\x02PA\"\x93\x01\n" +
 	"\tClientReq\x124\n" +
-	"\vTransaction\x18\x01 \x01(\v2\x12.paxos.TransactionR\vTransaction\x128\n" +
+	"\vTransaction\x18\x01 \x01(\v2\x12.twopc.TransactionR\vTransaction\x128\n" +
 	"\tTimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tTimestamp\x12\x16\n" +
 	"\x06Client\x18\x03 \x01(\tR\x06Client\"\x9f\x01\n" +
 	"\n" +
 	"ClientResp\x12%\n" +
-	"\x06Ballot\x18\x01 \x01(\v2\r.paxos.BallotR\x06Ballot\x128\n" +
+	"\x06Ballot\x18\x01 \x01(\v2\r.twopc.BallotR\x06Ballot\x128\n" +
 	"\tTimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tTimestamp\x12\x16\n" +
 	"\x06Client\x18\x03 \x01(\tR\x06Client\x12\x18\n" +
 	"\aSuccess\x18\x04 \x01(\bR\aSuccess\"3\n" +
 	"\n" +
 	"PrepareReq\x12%\n" +
-	"\x06Ballot\x18\x01 \x01(\v2\r.paxos.BallotR\x06Ballot\"Q\n" +
+	"\x06Ballot\x18\x01 \x01(\v2\r.twopc.BallotR\x06Ballot\"Q\n" +
 	"\n" +
 	"PromiseAck\x12%\n" +
-	"\x06Ballot\x18\x01 \x01(\v2\r.paxos.BallotR\x06Ballot\x12\x1c\n" +
-	"\tAcceptLog\x18\x02 \x03(\tR\tAcceptLog\"\x87\x01\n" +
+	"\x06Ballot\x18\x01 \x01(\v2\r.twopc.BallotR\x06Ballot\x12\x1c\n" +
+	"\tAcceptLog\x18\x02 \x03(\tR\tAcceptLog\"\x97\x01\n" +
 	"\x06Accept\x12%\n" +
-	"\x06Ballot\x18\x01 \x01(\v2\r.paxos.BallotR\x06Ballot\x12&\n" +
+	"\x06Ballot\x18\x01 \x01(\v2\r.twopc.BallotR\x06Ballot\x12&\n" +
 	"\x0eSequenceNumber\x18\x02 \x01(\x05R\x0eSequenceNumber\x12.\n" +
-	"\tClientReq\x18\x03 \x01(\v2\x10.paxos.ClientReqR\tClientReq\"\xa3\x01\n" +
+	"\tClientReq\x18\x03 \x01(\v2\x10.twopc.ClientReqR\tClientReq\x12\x0e\n" +
+	"\x02PA\x18\x04 \x01(\tR\x02PA\"\xa3\x01\n" +
 	"\bAccepted\x12%\n" +
-	"\x06Ballot\x18\x01 \x01(\v2\r.paxos.BallotR\x06Ballot\x12&\n" +
+	"\x06Ballot\x18\x01 \x01(\v2\r.twopc.BallotR\x06Ballot\x12&\n" +
 	"\x0eSequenceNumber\x18\x02 \x01(\x05R\x0eSequenceNumber\x12.\n" +
-	"\tClientReq\x18\x03 \x01(\v2\x10.paxos.ClientReqR\tClientReq\x12\x18\n" +
+	"\tClientReq\x18\x03 \x01(\v2\x10.twopc.ClientReqR\tClientReq\x12\x18\n" +
 	"\aNBallot\x18\x04 \x01(\x05R\aNBallot\"\x8e\x01\n" +
 	"\rCommitMessage\x12%\n" +
-	"\x06Ballot\x18\x01 \x01(\v2\r.paxos.BallotR\x06Ballot\x12&\n" +
+	"\x06Ballot\x18\x01 \x01(\v2\r.twopc.BallotR\x06Ballot\x12&\n" +
 	"\x0eSequenceNumber\x18\x02 \x01(\x05R\x0eSequenceNumber\x12.\n" +
-	"\tClientReq\x18\x03 \x01(\v2\x10.paxos.ClientReqR\tClientReq\"3\n" +
+	"\tClientReq\x18\x03 \x01(\v2\x10.twopc.ClientReqR\tClientReq\"3\n" +
 	"\n" +
 	"NewViewReq\x12%\n" +
-	"\x06Ballot\x18\x01 \x01(\v2\r.paxos.BallotR\x06Ballot\"'\n" +
+	"\x06Ballot\x18\x01 \x01(\v2\r.twopc.BallotR\x06Ballot\"'\n" +
 	"\aNewView\x12\x1c\n" +
 	"\tAcceptLog\x18\x01 \x03(\tR\tAcceptLog\"c\n" +
 	"\tNewViewUp\x12&\n" +
 	"\x0eSequenceNumber\x18\x01 \x01(\x05R\x0eSequenceNumber\x12.\n" +
-	"\tAcceptLog\x18\x02 \x01(\v2\x10.paxos.AcceptLogR\tAcceptLog\"@\n" +
+	"\tAcceptLog\x18\x02 \x01(\v2\x10.twopc.AcceptLogR\tAcceptLog\"@\n" +
 	"\x0eNewViewUpdated\x12.\n" +
-	"\tNewViewUp\x18\x01 \x03(\v2\x10.paxos.NewViewUpR\tNewViewUp\"\x1d\n" +
+	"\tNewViewUp\x18\x01 \x03(\v2\x10.twopc.NewViewUpR\tNewViewUp\"\x1d\n" +
 	"\vNewViewResp\x12\x0e\n" +
 	"\x02OK\x18\x01 \x01(\bR\x02OK\"\x1d\n" +
 	"\vIsAvailable\x12\x0e\n" +
@@ -1206,136 +1520,195 @@ const file_paxos_proto_rawDesc = "" +
 	"\aBalance\x18\x01 \x01(\tR\aBalance\"6\n" +
 	"\n" +
 	"AllBalance\x12(\n" +
-	"\aBalance\x18\x01 \x03(\v2\x0e.paxos.BalanceR\aBalance\"\x17\n" +
+	"\aBalance\x18\x01 \x03(\v2\x0e.twopc.BalanceR\aBalance\"\x17\n" +
 	"\x03Log\x12\x10\n" +
 	"\x03Log\x18\x01 \x01(\tR\x03Log\"\x1b\n" +
 	"\aAllLogs\x12\x10\n" +
 	"\x03Log\x18\x01 \x03(\tR\x03Log\"&\n" +
 	"\bClientID\x12\x1a\n" +
-	"\bClientID\x18\x01 \x01(\tR\bClientID\"\a\n" +
-	"\x05Empty2\xdd\x04\n" +
-	"\x05Paxos\x126\n" +
-	"\rClientRequest\x12\x10.paxos.ClientReq\x1a\x11.paxos.ClientResp\"\x00\x128\n" +
-	"\x0ePrepareRequest\x12\x11.paxos.PrepareReq\x1a\x11.paxos.PromiseAck\"\x00\x121\n" +
-	"\rAcceptRequest\x12\r.paxos.Accept\x1a\x0f.paxos.Accepted\"\x00\x12.\n" +
-	"\x06Commit\x12\x14.paxos.CommitMessage\x1a\f.paxos.Empty\"\x00\x123\n" +
-	"\x0eNewViewRequest\x12\x11.paxos.NewViewReq\x1a\x0e.paxos.NewView\x12.\n" +
-	"\rNewViewUpdate\x12\r.paxos.Ballot\x1a\f.paxos.Empty\"\x00\x12<\n" +
-	"\x12UpdateAvailability\x12\x12.paxos.IsAvailable\x1a\x12.paxos.IsAvailable\x12*\n" +
-	"\aPrintDB\x12\f.paxos.Empty\x1a\x11.paxos.AllBalance\x12)\n" +
-	"\tPrintLogs\x12\f.paxos.Empty\x1a\x0e.paxos.AllLogs\x12/\n" +
-	"\fPrintBalance\x12\x0f.paxos.ClientID\x1a\x0e.paxos.Balance\x12#\n" +
-	"\x05Flush\x12\f.paxos.Empty\x1a\f.paxos.Empty\x12/\n" +
-	"\x10GetCurrentLeader\x12\f.paxos.Empty\x1a\r.paxos.BallotB\bZ\x06/paxosb\x06proto3"
+	"\bClientID\x18\x01 \x01(\tR\bClientID\"8\n" +
+	"\tClientIDs\x12+\n" +
+	"\bClientID\x18\x01 \x03(\v2\x0f.twopc.ClientIDR\bClientID\"\a\n" +
+	"\x05Empty\"'\n" +
+	"\rClientReadReq\x12\x16\n" +
+	"\x06Client\x18\x01 \x01(\tR\x06Client\"Q\n" +
+	"\x0eClientReadResp\x12\x18\n" +
+	"\aBalance\x18\x01 \x01(\x05R\aBalance\x12%\n" +
+	"\x06Ballot\x18\x02 \x01(\v2\r.twopc.BallotR\x06Ballot\"|\n" +
+	"\fTwoPCMessage\x124\n" +
+	"\vTransaction\x18\x01 \x01(\v2\x12.twopc.TransactionR\vTransaction\x126\n" +
+	"\rClientRequest\x18\x02 \x01(\v2\x10.twopc.ClientReqR\rClientRequest\"\x94\x01\n" +
+	"\bPrepared\x12\x1a\n" +
+	"\bPrepared\x18\x01 \x01(\bR\bPrepared\x124\n" +
+	"\vTransaction\x18\x02 \x01(\v2\x12.twopc.TransactionR\vTransaction\x126\n" +
+	"\rClientRequest\x18\x03 \x01(\v2\x10.twopc.ClientReqR\rClientRequest\"\x17\n" +
+	"\x03Ack\x12\x10\n" +
+	"\x03Ack\x18\x01 \x01(\bR\x03Ack2\xf1\b\n" +
+	"\x05twopc\x126\n" +
+	"\rClientRequest\x12\x10.twopc.ClientReq\x1a\x11.twopc.ClientResp\"\x00\x12B\n" +
+	"\x11ClientReadRequest\x12\x14.twopc.ClientReadReq\x1a\x15.twopc.ClientReadResp\"\x00\x12K\n" +
+	"\"IntershardParticipantClientRequest\x12\x10.twopc.ClientReq\x1a\x11.twopc.ClientResp\"\x00\x128\n" +
+	"\x0ePrepareRequest\x12\x11.twopc.PrepareReq\x1a\x11.twopc.PromiseAck\"\x00\x121\n" +
+	"\rAcceptRequest\x12\r.twopc.Accept\x1a\x0f.twopc.Accepted\"\x00\x126\n" +
+	"\x12TwoPCAcceptRequest\x12\r.twopc.Accept\x1a\x0f.twopc.Accepted\"\x00\x12.\n" +
+	"\x06Commit\x12\x14.twopc.CommitMessage\x1a\f.twopc.Empty\"\x00\x12=\n" +
+	"\x15TwoPCPaxosAbortCommit\x12\x14.twopc.CommitMessage\x1a\f.twopc.Empty\"\x00\x123\n" +
+	"\x0eNewViewRequest\x12\x11.twopc.NewViewReq\x1a\x0e.twopc.NewView\x12.\n" +
+	"\rNewViewUpdate\x12\r.twopc.Ballot\x1a\f.twopc.Empty\"\x00\x12<\n" +
+	"\x12UpdateAvailability\x12\x12.twopc.IsAvailable\x1a\x12.twopc.IsAvailable\x12*\n" +
+	"\aPrintDB\x12\f.twopc.Empty\x1a\x11.twopc.AllBalance\x12)\n" +
+	"\tPrintLogs\x12\f.twopc.Empty\x1a\x0e.twopc.AllLogs\x12/\n" +
+	"\fPrintBalance\x12\x0f.twopc.ClientID\x1a\x0e.twopc.Balance\x12#\n" +
+	"\x05Flush\x12\f.twopc.Empty\x1a\f.twopc.Empty\x12/\n" +
+	"\x10GetCurrentLeader\x12\f.twopc.Empty\x1a\r.twopc.Ballot\x12;\n" +
+	"\x12TwoPCClientRequest\x12\x10.twopc.ClientReq\x1a\x11.twopc.ClientResp\"\x00\x126\n" +
+	"\fTwoPCPrepare\x12\x13.twopc.TwoPCMessage\x1a\x0f.twopc.Prepared\"\x00\x12/\n" +
+	"\n" +
+	"TwoPCAbort\x12\x13.twopc.TwoPCMessage\x1a\n" +
+	".twopc.Ack\"\x00\x120\n" +
+	"\vTwoPCCommit\x12\x13.twopc.TwoPCMessage\x1a\n" +
+	".twopc.Ack\"\x00\x122\n" +
+	"\rUpdateClients\x12\x13.twopc.TwoPCMessage\x1a\n" +
+	".twopc.Ack\"\x00B\bZ\x06/twopcb\x06proto3"
 
 var (
-	file_paxos_proto_rawDescOnce sync.Once
-	file_paxos_proto_rawDescData []byte
+	file_twopc_proto_rawDescOnce sync.Once
+	file_twopc_proto_rawDescData []byte
 )
 
-func file_paxos_proto_rawDescGZIP() []byte {
-	file_paxos_proto_rawDescOnce.Do(func() {
-		file_paxos_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_paxos_proto_rawDesc), len(file_paxos_proto_rawDesc)))
+func file_twopc_proto_rawDescGZIP() []byte {
+	file_twopc_proto_rawDescOnce.Do(func() {
+		file_twopc_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_twopc_proto_rawDesc), len(file_twopc_proto_rawDesc)))
 	})
-	return file_paxos_proto_rawDescData
+	return file_twopc_proto_rawDescData
 }
 
-var file_paxos_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
-var file_paxos_proto_goTypes = []any{
-	(*Ballot)(nil),                // 0: paxos.Ballot
-	(*Transaction)(nil),           // 1: paxos.Transaction
-	(*AcceptLog)(nil),             // 2: paxos.AcceptLog
-	(*ClientReq)(nil),             // 3: paxos.ClientReq
-	(*ClientResp)(nil),            // 4: paxos.ClientResp
-	(*PrepareReq)(nil),            // 5: paxos.PrepareReq
-	(*PromiseAck)(nil),            // 6: paxos.PromiseAck
-	(*Accept)(nil),                // 7: paxos.Accept
-	(*Accepted)(nil),              // 8: paxos.Accepted
-	(*CommitMessage)(nil),         // 9: paxos.CommitMessage
-	(*NewViewReq)(nil),            // 10: paxos.NewViewReq
-	(*NewView)(nil),               // 11: paxos.NewView
-	(*NewViewUp)(nil),             // 12: paxos.NewViewUp
-	(*NewViewUpdated)(nil),        // 13: paxos.NewViewUpdated
-	(*NewViewResp)(nil),           // 14: paxos.NewViewResp
-	(*IsAvailable)(nil),           // 15: paxos.IsAvailable
-	(*Balance)(nil),               // 16: paxos.Balance
-	(*AllBalance)(nil),            // 17: paxos.AllBalance
-	(*Log)(nil),                   // 18: paxos.Log
-	(*AllLogs)(nil),               // 19: paxos.AllLogs
-	(*ClientID)(nil),              // 20: paxos.ClientID
-	(*Empty)(nil),                 // 21: paxos.Empty
-	(*timestamppb.Timestamp)(nil), // 22: google.protobuf.Timestamp
+var file_twopc_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_twopc_proto_goTypes = []any{
+	(*Ballot)(nil),                // 0: twopc.Ballot
+	(*Transaction)(nil),           // 1: twopc.Transaction
+	(*AcceptLog)(nil),             // 2: twopc.AcceptLog
+	(*ClientReq)(nil),             // 3: twopc.ClientReq
+	(*ClientResp)(nil),            // 4: twopc.ClientResp
+	(*PrepareReq)(nil),            // 5: twopc.PrepareReq
+	(*PromiseAck)(nil),            // 6: twopc.PromiseAck
+	(*Accept)(nil),                // 7: twopc.Accept
+	(*Accepted)(nil),              // 8: twopc.Accepted
+	(*CommitMessage)(nil),         // 9: twopc.CommitMessage
+	(*NewViewReq)(nil),            // 10: twopc.NewViewReq
+	(*NewView)(nil),               // 11: twopc.NewView
+	(*NewViewUp)(nil),             // 12: twopc.NewViewUp
+	(*NewViewUpdated)(nil),        // 13: twopc.NewViewUpdated
+	(*NewViewResp)(nil),           // 14: twopc.NewViewResp
+	(*IsAvailable)(nil),           // 15: twopc.IsAvailable
+	(*Balance)(nil),               // 16: twopc.Balance
+	(*AllBalance)(nil),            // 17: twopc.AllBalance
+	(*Log)(nil),                   // 18: twopc.Log
+	(*AllLogs)(nil),               // 19: twopc.AllLogs
+	(*ClientID)(nil),              // 20: twopc.ClientID
+	(*ClientIDs)(nil),             // 21: twopc.ClientIDs
+	(*Empty)(nil),                 // 22: twopc.Empty
+	(*ClientReadReq)(nil),         // 23: twopc.ClientReadReq
+	(*ClientReadResp)(nil),        // 24: twopc.ClientReadResp
+	(*TwoPCMessage)(nil),          // 25: twopc.TwoPCMessage
+	(*Prepared)(nil),              // 26: twopc.Prepared
+	(*Ack)(nil),                   // 27: twopc.Ack
+	(*timestamppb.Timestamp)(nil), // 28: google.protobuf.Timestamp
 }
-var file_paxos_proto_depIdxs = []int32{
-	0,  // 0: paxos.AcceptLog.Ballot:type_name -> paxos.Ballot
-	3,  // 1: paxos.AcceptLog.AcceptVal:type_name -> paxos.ClientReq
-	1,  // 2: paxos.ClientReq.Transaction:type_name -> paxos.Transaction
-	22, // 3: paxos.ClientReq.Timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 4: paxos.ClientResp.Ballot:type_name -> paxos.Ballot
-	22, // 5: paxos.ClientResp.Timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 6: paxos.PrepareReq.Ballot:type_name -> paxos.Ballot
-	0,  // 7: paxos.PromiseAck.Ballot:type_name -> paxos.Ballot
-	0,  // 8: paxos.Accept.Ballot:type_name -> paxos.Ballot
-	3,  // 9: paxos.Accept.ClientReq:type_name -> paxos.ClientReq
-	0,  // 10: paxos.Accepted.Ballot:type_name -> paxos.Ballot
-	3,  // 11: paxos.Accepted.ClientReq:type_name -> paxos.ClientReq
-	0,  // 12: paxos.CommitMessage.Ballot:type_name -> paxos.Ballot
-	3,  // 13: paxos.CommitMessage.ClientReq:type_name -> paxos.ClientReq
-	0,  // 14: paxos.NewViewReq.Ballot:type_name -> paxos.Ballot
-	2,  // 15: paxos.NewViewUp.AcceptLog:type_name -> paxos.AcceptLog
-	12, // 16: paxos.NewViewUpdated.NewViewUp:type_name -> paxos.NewViewUp
-	16, // 17: paxos.AllBalance.Balance:type_name -> paxos.Balance
-	3,  // 18: paxos.Paxos.ClientRequest:input_type -> paxos.ClientReq
-	5,  // 19: paxos.Paxos.PrepareRequest:input_type -> paxos.PrepareReq
-	7,  // 20: paxos.Paxos.AcceptRequest:input_type -> paxos.Accept
-	9,  // 21: paxos.Paxos.Commit:input_type -> paxos.CommitMessage
-	10, // 22: paxos.Paxos.NewViewRequest:input_type -> paxos.NewViewReq
-	0,  // 23: paxos.Paxos.NewViewUpdate:input_type -> paxos.Ballot
-	15, // 24: paxos.Paxos.UpdateAvailability:input_type -> paxos.IsAvailable
-	21, // 25: paxos.Paxos.PrintDB:input_type -> paxos.Empty
-	21, // 26: paxos.Paxos.PrintLogs:input_type -> paxos.Empty
-	20, // 27: paxos.Paxos.PrintBalance:input_type -> paxos.ClientID
-	21, // 28: paxos.Paxos.Flush:input_type -> paxos.Empty
-	21, // 29: paxos.Paxos.GetCurrentLeader:input_type -> paxos.Empty
-	4,  // 30: paxos.Paxos.ClientRequest:output_type -> paxos.ClientResp
-	6,  // 31: paxos.Paxos.PrepareRequest:output_type -> paxos.PromiseAck
-	8,  // 32: paxos.Paxos.AcceptRequest:output_type -> paxos.Accepted
-	21, // 33: paxos.Paxos.Commit:output_type -> paxos.Empty
-	11, // 34: paxos.Paxos.NewViewRequest:output_type -> paxos.NewView
-	21, // 35: paxos.Paxos.NewViewUpdate:output_type -> paxos.Empty
-	15, // 36: paxos.Paxos.UpdateAvailability:output_type -> paxos.IsAvailable
-	17, // 37: paxos.Paxos.PrintDB:output_type -> paxos.AllBalance
-	19, // 38: paxos.Paxos.PrintLogs:output_type -> paxos.AllLogs
-	16, // 39: paxos.Paxos.PrintBalance:output_type -> paxos.Balance
-	21, // 40: paxos.Paxos.Flush:output_type -> paxos.Empty
-	0,  // 41: paxos.Paxos.GetCurrentLeader:output_type -> paxos.Ballot
-	30, // [30:42] is the sub-list for method output_type
-	18, // [18:30] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+var file_twopc_proto_depIdxs = []int32{
+	0,  // 0: twopc.AcceptLog.Ballot:type_name -> twopc.Ballot
+	3,  // 1: twopc.AcceptLog.AcceptVal:type_name -> twopc.ClientReq
+	1,  // 2: twopc.ClientReq.Transaction:type_name -> twopc.Transaction
+	28, // 3: twopc.ClientReq.Timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 4: twopc.ClientResp.Ballot:type_name -> twopc.Ballot
+	28, // 5: twopc.ClientResp.Timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 6: twopc.PrepareReq.Ballot:type_name -> twopc.Ballot
+	0,  // 7: twopc.PromiseAck.Ballot:type_name -> twopc.Ballot
+	0,  // 8: twopc.Accept.Ballot:type_name -> twopc.Ballot
+	3,  // 9: twopc.Accept.ClientReq:type_name -> twopc.ClientReq
+	0,  // 10: twopc.Accepted.Ballot:type_name -> twopc.Ballot
+	3,  // 11: twopc.Accepted.ClientReq:type_name -> twopc.ClientReq
+	0,  // 12: twopc.CommitMessage.Ballot:type_name -> twopc.Ballot
+	3,  // 13: twopc.CommitMessage.ClientReq:type_name -> twopc.ClientReq
+	0,  // 14: twopc.NewViewReq.Ballot:type_name -> twopc.Ballot
+	2,  // 15: twopc.NewViewUp.AcceptLog:type_name -> twopc.AcceptLog
+	12, // 16: twopc.NewViewUpdated.NewViewUp:type_name -> twopc.NewViewUp
+	16, // 17: twopc.AllBalance.Balance:type_name -> twopc.Balance
+	20, // 18: twopc.ClientIDs.ClientID:type_name -> twopc.ClientID
+	0,  // 19: twopc.ClientReadResp.Ballot:type_name -> twopc.Ballot
+	1,  // 20: twopc.TwoPCMessage.Transaction:type_name -> twopc.Transaction
+	3,  // 21: twopc.TwoPCMessage.ClientRequest:type_name -> twopc.ClientReq
+	1,  // 22: twopc.Prepared.Transaction:type_name -> twopc.Transaction
+	3,  // 23: twopc.Prepared.ClientRequest:type_name -> twopc.ClientReq
+	3,  // 24: twopc.twopc.ClientRequest:input_type -> twopc.ClientReq
+	23, // 25: twopc.twopc.ClientReadRequest:input_type -> twopc.ClientReadReq
+	3,  // 26: twopc.twopc.IntershardParticipantClientRequest:input_type -> twopc.ClientReq
+	5,  // 27: twopc.twopc.PrepareRequest:input_type -> twopc.PrepareReq
+	7,  // 28: twopc.twopc.AcceptRequest:input_type -> twopc.Accept
+	7,  // 29: twopc.twopc.TwoPCAcceptRequest:input_type -> twopc.Accept
+	9,  // 30: twopc.twopc.Commit:input_type -> twopc.CommitMessage
+	9,  // 31: twopc.twopc.TwoPCPaxosAbortCommit:input_type -> twopc.CommitMessage
+	10, // 32: twopc.twopc.NewViewRequest:input_type -> twopc.NewViewReq
+	0,  // 33: twopc.twopc.NewViewUpdate:input_type -> twopc.Ballot
+	15, // 34: twopc.twopc.UpdateAvailability:input_type -> twopc.IsAvailable
+	22, // 35: twopc.twopc.PrintDB:input_type -> twopc.Empty
+	22, // 36: twopc.twopc.PrintLogs:input_type -> twopc.Empty
+	20, // 37: twopc.twopc.PrintBalance:input_type -> twopc.ClientID
+	22, // 38: twopc.twopc.Flush:input_type -> twopc.Empty
+	22, // 39: twopc.twopc.GetCurrentLeader:input_type -> twopc.Empty
+	3,  // 40: twopc.twopc.TwoPCClientRequest:input_type -> twopc.ClientReq
+	25, // 41: twopc.twopc.TwoPCPrepare:input_type -> twopc.TwoPCMessage
+	25, // 42: twopc.twopc.TwoPCAbort:input_type -> twopc.TwoPCMessage
+	25, // 43: twopc.twopc.TwoPCCommit:input_type -> twopc.TwoPCMessage
+	25, // 44: twopc.twopc.UpdateClients:input_type -> twopc.TwoPCMessage
+	4,  // 45: twopc.twopc.ClientRequest:output_type -> twopc.ClientResp
+	24, // 46: twopc.twopc.ClientReadRequest:output_type -> twopc.ClientReadResp
+	4,  // 47: twopc.twopc.IntershardParticipantClientRequest:output_type -> twopc.ClientResp
+	6,  // 48: twopc.twopc.PrepareRequest:output_type -> twopc.PromiseAck
+	8,  // 49: twopc.twopc.AcceptRequest:output_type -> twopc.Accepted
+	8,  // 50: twopc.twopc.TwoPCAcceptRequest:output_type -> twopc.Accepted
+	22, // 51: twopc.twopc.Commit:output_type -> twopc.Empty
+	22, // 52: twopc.twopc.TwoPCPaxosAbortCommit:output_type -> twopc.Empty
+	11, // 53: twopc.twopc.NewViewRequest:output_type -> twopc.NewView
+	22, // 54: twopc.twopc.NewViewUpdate:output_type -> twopc.Empty
+	15, // 55: twopc.twopc.UpdateAvailability:output_type -> twopc.IsAvailable
+	17, // 56: twopc.twopc.PrintDB:output_type -> twopc.AllBalance
+	19, // 57: twopc.twopc.PrintLogs:output_type -> twopc.AllLogs
+	16, // 58: twopc.twopc.PrintBalance:output_type -> twopc.Balance
+	22, // 59: twopc.twopc.Flush:output_type -> twopc.Empty
+	0,  // 60: twopc.twopc.GetCurrentLeader:output_type -> twopc.Ballot
+	4,  // 61: twopc.twopc.TwoPCClientRequest:output_type -> twopc.ClientResp
+	26, // 62: twopc.twopc.TwoPCPrepare:output_type -> twopc.Prepared
+	27, // 63: twopc.twopc.TwoPCAbort:output_type -> twopc.Ack
+	27, // 64: twopc.twopc.TwoPCCommit:output_type -> twopc.Ack
+	27, // 65: twopc.twopc.UpdateClients:output_type -> twopc.Ack
+	45, // [45:66] is the sub-list for method output_type
+	24, // [24:45] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
-func init() { file_paxos_proto_init() }
-func file_paxos_proto_init() {
-	if File_paxos_proto != nil {
+func init() { file_twopc_proto_init() }
+func file_twopc_proto_init() {
+	if File_twopc_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_paxos_proto_rawDesc), len(file_paxos_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_twopc_proto_rawDesc), len(file_twopc_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   22,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_paxos_proto_goTypes,
-		DependencyIndexes: file_paxos_proto_depIdxs,
-		MessageInfos:      file_paxos_proto_msgTypes,
+		GoTypes:           file_twopc_proto_goTypes,
+		DependencyIndexes: file_twopc_proto_depIdxs,
+		MessageInfos:      file_twopc_proto_msgTypes,
 	}.Build()
-	File_paxos_proto = out.File
-	file_paxos_proto_goTypes = nil
-	file_paxos_proto_depIdxs = nil
+	File_twopc_proto = out.File
+	file_twopc_proto_goTypes = nil
+	file_twopc_proto_depIdxs = nil
 }

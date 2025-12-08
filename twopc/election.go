@@ -1,4 +1,4 @@
-package paxos
+package twopc
 
 import (
 	"context"
@@ -14,10 +14,10 @@ func (s *Server) Checkelectiontimer() {
 		log.Printf("Waiting for election timer to run out..")
 		<-s.ElectionTimer.C
 		s.Mapmu.Lock()
-		s.CurrLeaderBallot = &Ballot{
-			SequenceNumber: 0,
-			ProcessID:      0,
-		}
+		// s.CurrLeaderBallot = &Ballot{
+		// 	SequenceNumber: 0,
+		// 	ProcessID:      0,
+		// }
 		s.Mapmu.Unlock()
 		if !s.ElectionTimer.Stop() {
 			select {
@@ -30,11 +30,16 @@ func (s *Server) Checkelectiontimer() {
 			s.ElectionTimer.Reset(s.ElectionTimerDuration)
 			continue
 		}
-
+		if s.IsLeader {
+			log.Printf("Node %v is leader; resetting election timer and skipping new election", s.Id)
+			time.Sleep(500 * time.Millisecond)
+			s.ElectionTimer.Reset(s.ElectionTimerDuration)
+			continue
+		}
 		log.Printf("resetting election timer of %v", s.Id)
-		s.ElectionTimer.Reset(s.ElectionTimerDuration)
+		s.ElectionTimer.Reset(s.ElectionTimerDuration * 2)
 		if time.Since(s.LastPrepareReceived) < s.Tp {
-			log.Println("received prepare")
+			log.Println("received prepare, not starting election")
 			continue
 		}
 		s.Mapmu.Lock()
@@ -43,7 +48,7 @@ func (s *Server) Checkelectiontimer() {
 			ProcessID:      int32(s.Id),
 		}}
 		s.Mapmu.Unlock()
-		// log.Printf("sentBallot ballot: %v", sentBallot)
+		log.Printf("sentBallot ballot: %v", sentBallot)
 		// log.Printf("HighestBallotSeen ballot: %v", s.HighestBallotSeen)
 
 		if isBallotHigher(sentBallot.Ballot, s.HighestBallotSeen) {
@@ -82,7 +87,7 @@ func (s *Server) Checkelectiontimer() {
 				}()
 			}
 			wg.Wait()
-			waitTimer := time.NewTimer(100 * time.Millisecond) //Prepare request timeout
+			waitTimer := time.NewTimer(2 * time.Second) //Prepare request timeout
 			promisesCount := 1
 		WAIT:
 			for {
@@ -107,6 +112,7 @@ func (s *Server) Checkelectiontimer() {
 						break WAIT
 					}
 				case <-waitTimer.C:
+					s.IsLeader = false
 					log.Println("Prepare timer expired")
 					break WAIT
 				}
@@ -137,7 +143,7 @@ func (s *Server) SendAccepts() {
 			s.ElectionTimer.Reset(s.ElectionTimerDuration)
 			for _, grpcclient := range s.GrpcClientMap {
 
-				// log.Printf("heartbeat to %v", i) //FIXME: uncomment Later
+				// log.Printf("heartbeat %v to %v", s.CurrLeaderBallot, i) //FIXME: uncomment Later
 				grpcC := grpcclient
 				wg.Add(1)
 				go func() {
@@ -147,7 +153,7 @@ func (s *Server) SendAccepts() {
 						// log.Printf("Unreachable node %v", i)
 						wg.Done()
 					} else {
-						// log.Println("heartbeat ack", acceptAck) //FIXME: uncomment Later
+						// log.Println("heartbeat ack") //FIXME: uncomment Later
 						wg.Done()
 					}
 				}()
@@ -194,7 +200,7 @@ func (s *Server) SendAcceptsWithTransaction(acceptMsg *Accept, majorityAccepted 
 		}
 		wg.Wait()
 		log.Printf("Post for loop of sendacceptwithtransaction")
-		waitTimer := time.NewTimer(500 * time.Millisecond)
+		waitTimer := time.NewTimer(2 * time.Second)
 		acceptedMessagesCount := 1
 	WAIT:
 		for {
@@ -212,7 +218,7 @@ func (s *Server) SendAcceptsWithTransaction(acceptMsg *Accept, majorityAccepted 
 			case <-waitTimer.C:
 				log.Println("AcceptTimerRan out. No majority")
 				s.IsLeader = false
-				s.ElectionTimer.Reset(0)
+				s.ElectionTimer.Reset(s.ElectionTimerDuration)
 				acceptedMessagesCount = 1
 				s.IsLeader = false
 				break WAIT

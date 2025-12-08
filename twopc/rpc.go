@@ -1,4 +1,4 @@
-package paxos
+package twopc
 
 import (
 	"context"
@@ -16,9 +16,14 @@ import (
 type Cluster struct {
 	Id            int
 	Leader        int
-	GrpcClientMap map[string]PaxosClient
+	GrpcClientMap map[string]TwopcClient
 }
 
+// wal - client - Before after balance, transaction
+type Wal struct {
+	Before int
+	After  int
+}
 type Server struct {
 	Id               int
 	ClusterID        int
@@ -27,6 +32,8 @@ type Server struct {
 	CurrLeaderBallot *Ballot
 	Addr             string
 	Clients          []string
+
+	LockTable sync.Map
 
 	HighestBallotSeen  *Ballot
 	CurrSequenceNumber int
@@ -38,18 +45,22 @@ type Server struct {
 
 	Mapmu                 sync.Mutex
 	Balmu                 sync.Mutex
-	StatusMap             sync.Map
-	TimestampTransactions sync.Map
-	SequenceTransactions  sync.Map
+	StatusMap             sync.Map //currseq, status
+	TimestampStatus       sync.Map //timestamp, status
+	TimestampSequence     sync.Map
+	TwoPCResults          sync.Map
 	LatestTransaction     *timestamppb.Timestamp
 	Datastore             *db.Datastore
-	GrpcClientMap         map[string]PaxosClient
+	GrpcClientMap         map[string]TwopcClient
 	ElectionTimer         *time.Timer
 	PrepareTimer          *time.Timer
 	ElectionTimerDuration time.Duration
 	MajorityAccepted      chan struct{}
 	AllClusters           map[int]Cluster
-	UnimplementedPaxosServer
+
+	// WAL map[*Transaction]map[string]int
+	WAL sync.Map
+	UnimplementedTwopcServer
 }
 
 func (s *Server) IsNotAvailable() error {
@@ -57,6 +68,7 @@ func (s *Server) IsNotAvailable() error {
 }
 
 func (s *Server) ClientRequest(ctx context.Context, clientReq *ClientReq) (*ClientResp, error) {
+	log.Println("Recieved ClientRequest: ", clientReq.Transaction)
 	// log.Println("Recieved a client request: ", clientReq)
 	if !s.IsAvailable {
 		return nil, s.IsNotAvailable()
@@ -64,7 +76,7 @@ func (s *Server) ClientRequest(ctx context.Context, clientReq *ClientReq) (*Clie
 	if !s.IsLeader {
 		if s.CurrLeaderBallot.ProcessID != 0 && s.CurrLeaderBallot.ProcessID != int32(s.Id) {
 			log.Printf("node %v is not the leader. Redirecting to node %v", s.Id, s.CurrLeaderBallot.ProcessID)
-			ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
+			ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 			return s.GrpcClientMap[Nodes[int(s.CurrLeaderBallot.ProcessID)]].ClientRequest(ctx, clientReq)
 		} else {
 			return nil, fmt.Errorf("node %v is not aware of the new leader", s.Id)
@@ -73,9 +85,7 @@ func (s *Server) ClientRequest(ctx context.Context, clientReq *ClientReq) (*Clie
 	if s.LatestTransaction == nil {
 		s.LatestTransaction = clientReq.Timestamp
 	}
-	// if clientReq.Timestamp.AsTime().Before(s.LatestTransaction.AsTime()) {
-	// 	log.Println("Old Request recieved")
-	val, ok := s.TimestampTransactions.Load(clientReq.Timestamp.AsTime().UnixNano())
+	val, ok := s.TimestampStatus.Load(clientReq.Timestamp.AsTime().UnixNano())
 	if ok {
 		switch val {
 		case "Success":
@@ -103,14 +113,26 @@ func (s *Server) ClientRequest(ctx context.Context, clientReq *ClientReq) (*Clie
 			return nil, errors.New("request still in progress")
 		}
 	}
-	s.TimestampTransactions.Store(clientReq.Timestamp.AsTime().UnixNano(), "InProgress")
+
+	if _, ok := s.LockTable.Load(clientReq.Transaction.Sender); ok {
+		log.Printf("ClientRequest Failed: Data item %v locked.\n", clientReq.Transaction.Sender)
+		return nil, fmt.Errorf("LockError")
+	} else if _, ok := s.LockTable.Load(clientReq.Transaction.Reciever); ok {
+		log.Printf("ClientRequest Failed: Data item %v locked.\n", clientReq.Transaction.Sender)
+		return nil, fmt.Errorf("LockError")
+	} else {
+		s.LockTable.Store(clientReq.Transaction.Sender, clientReq.Transaction)
+		s.LockTable.Store(clientReq.Transaction.Reciever, clientReq.Transaction)
+	}
+
+	s.TimestampStatus.Store(clientReq.Timestamp.AsTime().UnixNano(), "InProgress")
 	log.Println("Processing: ", clientReq)
 	waitTimer := time.NewTimer(3 * time.Second)
 	s.Mapmu.Lock()
 	s.CurrSequenceNumber += 1
 	currseq := s.CurrSequenceNumber
 	s.Mapmu.Unlock()
-
+	s.TimestampSequence.Store(clientReq.Timestamp.AsTime().UnixNano(), currseq)
 	s.StatusMap.Store(currseq, "Accepted")
 	acceptMsg := &Accept{
 		Ballot:         s.CurrLeaderBallot,
@@ -130,18 +152,22 @@ func (s *Server) ClientRequest(ctx context.Context, clientReq *ClientReq) (*Clie
 	case <-majorityAccepted:
 		go s.SendCommit(currseq, clientReq)
 		s.StatusMap.Store(currseq, "Committed")
-		err := s.Execution(clientReq.Transaction, currseq)
+		err := s.TwoPCExecution(clientReq.Transaction, currseq)
+		s.StatusMap.Store(currseq, "Executed")
 		if err != nil {
-			s.StatusMap.Store(currseq, "no-op")
-			s.TimestampTransactions.Store(clientReq.Timestamp.AsTime().UnixNano(), "Failure")
+			log.Println("Insufficient Balance. no-op for: ", clientReq.Transaction)
+			s.TimestampStatus.Store(clientReq.Timestamp.AsTime().UnixNano(), "Failure")
+			s.LockTable.Delete(clientReq.Transaction.Sender)
+			s.LockTable.Delete(clientReq.Transaction.Reciever)
 			return &ClientResp{Ballot: s.CurrLeaderBallot, Success: false, Timestamp: clientReq.Timestamp, Client: clientReq.Client}, nil
 		} else {
-			s.StatusMap.Store(currseq, "Executed")
-			s.TimestampTransactions.Store(clientReq.Timestamp.AsTime().UnixNano(), "Success")
+			s.TimestampStatus.Store(clientReq.Timestamp.AsTime().UnixNano(), "Success")
+			s.LockTable.Delete(clientReq.Transaction.Sender)
+			s.LockTable.Delete(clientReq.Transaction.Reciever)
 			return &ClientResp{Ballot: s.CurrLeaderBallot, Success: true, Timestamp: clientReq.Timestamp, Client: clientReq.Client}, nil
 		}
 	case <-waitTimer.C:
-		log.Printf("Consensus on Accept not reached")
+		log.Println("Consensus on Accept not reached for transaction: ", clientReq.Transaction)
 	}
 
 	return &ClientResp{Ballot: s.CurrLeaderBallot, Success: false, Timestamp: clientReq.Timestamp, Client: clientReq.Client}, fmt.Errorf("did not process the request %v", clientReq.Transaction)
@@ -154,9 +180,6 @@ func (s *Server) PrepareRequest(ctx context.Context, prepareMsg *PrepareReq) (*P
 	log.Printf("Recieved Prepare from Node: %s", prepareMsg.Ballot)
 	s.LastPrepareReceived = time.Now()
 
-	// s.Mapmu.Lock()
-	// currHighestBallot := s.HighestBallotSeen
-	// // s.Mapmu.Unlock()
 	s.Mapmu.Lock()
 	if isBallotHigher(prepareMsg.Ballot, s.HighestBallotSeen) {
 		log.Printf("%v is higher than %v", prepareMsg.Ballot, s.HighestBallotSeen)
@@ -170,11 +193,11 @@ func (s *Server) PrepareRequest(ctx context.Context, prepareMsg *PrepareReq) (*P
 	}
 	s.Mapmu.Unlock()
 	if s.PrepareTimer == nil {
-		s.PrepareTimer = time.NewTimer(2 * time.Second)
+		s.PrepareTimer = time.NewTimer(3 * time.Second)
 	} else {
 		select {
 		case <-s.PrepareTimer.C:
-			s.PrepareTimer.Reset(2 * time.Second)
+			s.PrepareTimer.Reset(3 * time.Second)
 		}
 	}
 	if prepareMsg.Ballot == s.HighestBallotSeen {
@@ -207,9 +230,8 @@ func (s *Server) AcceptRequest(ctx context.Context, acceptMsg *Accept) (*Accepte
 	} else {
 		s.ElectionTimer = time.NewTimer(s.ElectionTimerDuration)
 	}
-
-	currStatus, ok := s.StatusMap.Load(acceptMsg.SequenceNumber)
-	if ok && (currStatus == "Executed" || currStatus == "no-op" || currStatus == "Committed") {
+	currStatus, ok := s.StatusMap.Load(int(acceptMsg.SequenceNumber))
+	if ok && (currStatus == "Executed" || currStatus == "Committed") {
 		acceptlog := StringBuilder(acceptMsg)
 		fmt.Println("acceptlog: ", acceptlog)
 		s.Datastore.UpdateLog([]byte(strconv.Itoa(int(acceptMsg.SequenceNumber))), []byte(acceptlog))
@@ -222,6 +244,9 @@ func (s *Server) AcceptRequest(ctx context.Context, acceptMsg *Accept) (*Accepte
 	// log.Printf("ElectionTimerDuration=%v", s.ElectionTimerDuration) //FIXME: commentout later
 	if areBallotsEqual(acceptMsg.Ballot, s.HighestBallotSeen) {
 		if acceptMsg.SequenceNumber == -1 {
+			s.Mapmu.Lock()
+			s.CurrLeaderBallot = acceptMsg.Ballot
+			s.Mapmu.Unlock()
 			// log.Printf("Recieved heartbeat from leader %v", s.CurrLeaderBallot.ProcessID)
 			return &Accepted{
 				Ballot:         acceptMsg.Ballot,
@@ -235,8 +260,19 @@ func (s *Server) AcceptRequest(ctx context.Context, acceptMsg *Accept) (*Accepte
 				s.Mapmu.Unlock()
 			}
 			log.Printf("Recieved transaction from leader %v", s.CurrLeaderBallot.ProcessID)
+			//lock records
+			if _, ok := s.LockTable.Load(acceptMsg.ClientReq.Transaction.Sender); ok {
+				log.Printf("ClientRequest Failed: Data item %v locked.\n", acceptMsg.ClientReq.Transaction.Sender)
+				return nil, fmt.Errorf("LockError")
+			} else if _, ok := s.LockTable.Load(acceptMsg.ClientReq.Transaction.Reciever); ok {
+				log.Printf("ClientRequest Failed: Data item %v locked.\n", acceptMsg.ClientReq.Transaction.Sender)
+				return nil, fmt.Errorf("LockError")
+			} else {
+				s.LockTable.Store(acceptMsg.ClientReq.Transaction.Sender, acceptMsg.ClientReq.Transaction)
+				s.LockTable.Store(acceptMsg.ClientReq.Transaction.Reciever, acceptMsg.ClientReq.Transaction)
+			}
 			//check if log already exists
-
+			s.TimestampSequence.Store(acceptMsg.ClientReq.Timestamp.AsTime().UnixNano(), int(acceptMsg.SequenceNumber))
 			log.Printf("updating log for acceptrequest")
 			s.StatusMap.Store(int(acceptMsg.SequenceNumber), "Accepted")
 
@@ -269,18 +305,16 @@ func (s *Server) Commit(ctx context.Context, commitMessage *CommitMessage) (*Emp
 
 	currseq := int(commitMessage.SequenceNumber)
 	currStatus, ok := s.StatusMap.Load(currseq)
-	if ok && (currStatus == "Executed" || currStatus == "no-op" || currStatus == "Committed") {
+	if ok && (currStatus == "Executed" || currStatus == "Committed") {
 		return nil, nil
 	}
 	log.Printf("%v committed.", currseq)
 	s.StatusMap.Store(currseq, "Committed")
 
-	err := s.Execution(commitMessage.ClientReq.Transaction, currseq)
-	if err != nil {
-		s.StatusMap.Store(currseq, "no-op")
-	} else {
-		s.StatusMap.Store(currseq, "Executed")
-	}
+	err := s.TwoPCExecution(commitMessage.ClientReq.Transaction, currseq)
+	s.StatusMap.Store(currseq, "Executed")
+	s.LockTable.Delete(commitMessage.ClientReq.Transaction.Sender)
+	s.LockTable.Delete(commitMessage.ClientReq.Transaction.Reciever)
 	//fIXME: update the datastore.
 	return nil, err
 }
@@ -292,7 +326,7 @@ func (s *Server) Execution(transaction *Transaction, sequenceNumber int) error {
 			time.Sleep(3 * time.Millisecond)
 			continue
 		}
-		if prevstatus == "Executed" || prevstatus == "no-op" {
+		if prevstatus == "Executed" {
 			break
 		} else {
 			time.Sleep(3 * time.Millisecond)
@@ -309,8 +343,6 @@ func (s *Server) Execution(transaction *Transaction, sequenceNumber int) error {
 		switch currseqstatus {
 		case "Executed":
 			return nil
-		case "no-op":
-			return fmt.Errorf("no-op")
 		default:
 		}
 	}
@@ -322,7 +354,7 @@ func (s *Server) Execution(transaction *Transaction, sequenceNumber int) error {
 
 	balint, _ := strconv.Atoi(string(bal))
 	if balint < int(transaction.Amount) {
-		fmt.Printf("NO-OP: Insufficient balance %v: %v", transaction.Sender, err)
+		fmt.Printf("NO-OP: Insufficient balance %v\n", transaction.Sender)
 		return fmt.Errorf("no-op")
 	}
 
@@ -358,6 +390,15 @@ func (s *Server) KillLeader(ctx context.Context, empty *Empty) (*Empty, error) {
 		return &Empty{}, fmt.Errorf("node %v is not the current leader", s.Id)
 	}
 	s.IsAvailable = false
+	if s.ElectionTimer != nil {
+		if !s.ElectionTimer.Stop() {
+			select {
+			case <-s.ElectionTimer.C:
+			default:
+			}
+		}
+	}
+	// s.IsLeader = false
 	log.Printf("node %v is down", s.Id)
 	return nil, nil
 }
@@ -367,10 +408,42 @@ func (s *Server) GetCurrentLeader(ctx context.Context, empty *Empty) (*Ballot, e
 }
 
 func (s *Server) Flush(ctx context.Context, empty *Empty) (*Empty, error) {
-	s.Datastore.Flush()
+	log.Println("Cleaning data.")
+	err := s.Datastore.Flush()
+	if err != nil {
+		log.Println(err)
+	}
 	s.CurrSequenceNumber = 0
+	s.IsLeader = false
+	s.LockTable = sync.Map{}
 
+	s.StatusMap = sync.Map{}
+	s.TimestampStatus = sync.Map{}
+	s.TimestampSequence = sync.Map{}
+	s.TwoPCResults = sync.Map{}
 	s.MajorityAccepted = make(chan struct{}, n)
 
+	// s.GrpcClientMap = make(map[string]TwopcClient)
+
+	s.CurrSequenceNumber = 0
+	s.IsNewViewRequired = true
+	s.MajorityAccepted = make(chan struct{}, n)
+	s.CurrLeaderBallot = &Ballot{
+		SequenceNumber: 0,
+		ProcessID:      0,
+	}
+	s.HighestBallotSeen = &Ballot{
+		SequenceNumber: 0,
+		ProcessID:      0,
+	}
+	if s.Id == 1 || s.Id == 4 || s.Id == 7 {
+		s.ElectionTimerDuration = 1 * time.Second
+		s.ElectionTimer.Reset(1 * time.Second)
+	} else {
+		s.ElectionTimerDuration = s.NextElectionTimeout()
+		s.ElectionTimer.Reset(s.ElectionTimerDuration)
+	}
+	// s.WAL = map[*Transaction]map[string]int{}
+	log.Println("Flushed")
 	return nil, nil
 }

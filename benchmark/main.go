@@ -34,89 +34,47 @@ var (
 	n                    = 9
 	ClusterLeaders       = []int{0, 1, 4, 7}
 	GrpcClientMap        = make(map[int]twopc.TwopcClient)
-	ClientTimerDuration  = 7 * time.Second
+	ClientTimerDuration  = 14 * time.Second
 	ContextWindowTime    = 10 * time.Second
 	CurrStartTime        time.Time
 	CurrTotalTime        time.Duration
 	CurrTransactionCount int
 	CurrTotalLatency     time.Duration
 	MetricsMu            sync.Mutex
+	wg                   sync.WaitGroup
 )
 
 func main() {
 	log.Println("Starting client")
 	InitGRPCMap()
-	// filePath := "CSE535-F25-Project-3-Testcases.csv"
-	filePath := "testcases.csv"
-	sets, availablenodes, err := ReadTransactions(filePath)
-	if err != nil {
-		log.Fatal("could not read CSV. Try again")
-		return
+
+	benchmarkConfig := &BenchmarkConfig{
+		TotalOperations: 1000,
+		ReadWriteRatio:  0.5,
+		CrossShardRatio: 0.8,
+		Skew:            0,
 	}
 
-	for set := 0; set < len(sets)+1; {
-		fmt.Println("Choose an option:\n1. PrintDB\n2. PrintBalance\n3.PrintPerformance\nDefault: Continue to the next set")
+	Clients := make([]string, 9000)
+	for i := 1; i <= 9000; i++ {
+		Clients[i-1] = strconv.Itoa(i)
+	}
+	//total int, readWriteRatio, crossShardRatio, skew float64
+	transactions := CreateWorkload(benchmarkConfig.TotalOperations, benchmarkConfig.ReadWriteRatio, benchmarkConfig.CrossShardRatio, benchmarkConfig.Skew)
 
-		var choice int
-		fmt.Print("Enter your choice (1-5):\n")
-		fmt.Scanln(&choice)
-		id := -1
-		balanceclient := ""
-		switch choice {
-		case 1:
-			fmt.Print("Enter the node id (1-5): ")
-			fmt.Scanln(&id)
-			err := PrintDB(GrpcClientMap[id])
-			if err != nil {
-				log.Println("Could not PrintDB:", err)
-			}
-		case 2:
-			fmt.Print("Enter the sequence number: ")
-			fmt.Scanln(&balanceclient)
-			err := PrintBalance(balanceclient)
-			if err != nil {
-				log.Println("Could not PrintStatus", err)
-			}
-		case 3:
-			fmt.Print("Performace")
-			err := Performance()
-			if err != nil {
-				log.Println("Could not PrintStatus", err)
-			}
-		default:
-			if set >= len(sets)+1 {
-				return
-			}
-			Flush()
-			updateAvailability(availablenodes[set])
-			fmt.Println("set's avaialble nodes: ", availablenodes[set])
-			log.Println("Transactions: ", sets[set])
-			i := len(sets[set])
-			// var wg sync.WaitGroup
-			CurrStartTime = time.Now()
-			for j := 0; j < i; j++ {
-				resChannel := make(chan struct{})
-				// for _, transaction := range sets[set][j] {
-				// wg.Add(1)
-				t := sets[set][j]
-				switch t[0].Sender {
-				case "F":
-					go FailNode(t[0].Reciever, resChannel)
-					time.Sleep(2 * time.Second)
-				case "R":
-					go RecoverNode(t[0].Reciever, resChannel)
-				default:
-					go RunTransactions(sets[set][j], resChannel)
-				}
-				time.Sleep(1 * time.Second)
-				// <-resChannel
-			}
-			// wg.Wait()
-			CurrTotalTime = time.Since(CurrStartTime)
-			println()
-			set++
-		}
-
+	result := make(chan struct{})
+	Flush()
+	log.Println(transactions)
+	// var wg sync.WaitGroup
+	CurrStartTime = time.Now()
+	go RunTransactions(transactions, result)
+	<-result
+	CurrTotalTime = time.Since(CurrStartTime)
+	println()
+	fmt.Print("Performace")
+	err := Performance()
+	if err != nil {
+		return
 	}
 }
 
@@ -136,64 +94,16 @@ func InitGRPCMap() {
 	Flush()
 }
 
-func updateAvailability(availableNodes []int) error {
-	for i, client := range GrpcClientMap {
-		isAvailable := false
-		ctx, cancelFunc := context.WithTimeout(context.Background(), ContextWindowTime)
-		for _, v := range availableNodes {
-			if v == i {
-				isAvailable = true
-				break
-			}
-		}
-		_, err := client.UpdateAvailability(ctx, &twopc.IsAvailable{Up: isAvailable})
-		cancelFunc()
-		if err != nil {
-			// log.Println("138Could not connect: ", err.Error())
-			return nil
-		}
-	}
-	return nil
-}
-
-func FailNode(node string, resChannel chan struct{}) {
-	time.Sleep(1 * time.Second)
-	log.Println("Failing node:", node)
-	n, _ := strconv.Atoi(node)
-	ctx, cancelFunc := context.WithTimeout(context.Background(), ContextWindowTime)
-	_, err := GrpcClientMap[n].UpdateAvailability(ctx, &twopc.IsAvailable{Up: false})
-	if err != nil {
-		log.Println("Could not fail node: ", node)
-	}
-	cancelFunc()
-	time.Sleep(1 * time.Second)
-	resChannel <- struct{}{}
-}
-
-func RecoverNode(node string, resChannel chan struct{}) {
-	log.Println("Recovering node:", node)
-	n, _ := strconv.Atoi(node)
-	ctx, cancelFunc := context.WithTimeout(context.Background(), ContextWindowTime)
-	_, err := GrpcClientMap[n].UpdateAvailability(ctx, &twopc.IsAvailable{Up: true})
-	if err != nil {
-		log.Println("Could not fail node: ", node)
-	}
-	cancelFunc()
-	resChannel <- struct{}{}
-}
-
-func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}) error {
-	var wg sync.WaitGroup
+func RunTransactions(transactions []*twopc.Transaction, result chan struct{}) error {
 	for _, transaction := range transactions {
 		wg.Add(1)
 		t := transaction
-		CurrTransactionCount++
 		go func(t *twopc.Transaction) {
 			defer wg.Done()
 			client, _ := strconv.Atoi(t.Sender)
 			clusterId := GetClusterID(client)
 			if t.Reciever == "" && t.Amount == 0 {
-				ReadOperation(t.Sender, clusterId)
+				ReadOperation(t.Sender, clusterId) //106
 				return
 			}
 			message := &twopc.ClientReq{
@@ -210,16 +120,19 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 			CurrTransactionCount++
 			MetricsMu.Unlock()
 			cancelFunc()
-			// log.Println(res)
-			log.Println(err)
+
 			if err != nil {
 				if strings.Contains(err.Error(), "LockError") {
 					log.Printf("LockError: Transaction %v failed, Retrying..", t)
+					BroadcastClientrequest(clusterId, message.Client, message)
+					return
 				}
 				if strings.Contains(err.Error(), "DeadlineExceeded") {
 					log.Printf("Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", t)
+					BroadcastClientrequest(clusterId, message.Client, message)
+					return
 				}
-				BroadcastClientrequest(clusterId, message.Client, message)
+				log.Println("RunTransactions: Could not connect: ", err.Error())
 				return
 			}
 
@@ -231,22 +144,25 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 			}
 		}(t)
 	}
+
 	wg.Wait()
+	result <- struct{}{}
 	return nil
 }
 
 func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientReq) {
-	// twoloops := 2
+	fmt.Println("Broadcasting transaction")
+	clientTimerDuration := 2 * time.Second
 	for {
-		fmt.Println("Broadcasting transaction:", request.Transaction)
 		resChannel := make(chan struct{}, 1)
-		clientTimerDuration := 3 * time.Second
 		clientTimer := time.NewTimer(clientTimerDuration)
 		for _, nodeClient := range Clusters[clusterId] {
 			node := nodeClient
 			go func(node int) {
 				ctx, cancelFunc := context.WithTimeout(context.Background(), ClientTimerDuration)
+
 				res, err := GrpcClientMap[node].TwoPCClientRequest(ctx, request)
+
 				cancelFunc()
 				if err != nil {
 					if strings.Contains(err.Error(), "LockError") {
@@ -285,52 +201,35 @@ func ReadOperation(client string, clusterId int) {
 	readreq := &twopc.ClientReadReq{Client: client}
 
 	ctx, cancelFunc := context.WithTimeout(context.Background(), ContextWindowTime)
+
+	start := time.Now()
 	res, err := GrpcClientMap[ClusterLeaders[clusterId]].ClientReadRequest(ctx, readreq)
+	latency := time.Since(start)
+	MetricsMu.Lock()
+	CurrTotalLatency += latency
+	CurrTransactionCount++
+	MetricsMu.Unlock()
 	cancelFunc()
 	if err == nil {
 		log.Printf("Balance for client %v: %v\n", client, res.Balance)
 		return
-	} else {
-		log.Println("Couldn't get balance. Retrying..")
 	}
+
 	for {
-		clientTimer := time.NewTimer(ClientTimerDuration)
-		resChannel := make(chan struct{})
-		for _, nodeClient := range Clusters[clusterId] {
-			node := nodeClient
-			go func(node int) {
-				ctx, cancelFunc := context.WithTimeout(context.Background(), ClientTimerDuration)
-				res, err := GrpcClientMap[node].ClientReadRequest(ctx, readreq)
-				cancelFunc()
-				if err != nil {
-					if strings.Contains(err.Error(), "LockError") {
-						log.Printf("BroadcastClientrequest: LockError: Transaction %v failed, Retrying..", readreq.Client)
-						return
-					}
-					if strings.Contains(err.Error(), "DeadlineExceeded") {
-						log.Printf("Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", readreq.Client)
-						return
-					}
-					log.Println("BroadcastClientrequest: Could not connect: ", err.Error())
-					return
-				} else {
-					if res != nil && res.Ballot != nil && res.Ballot.ProcessID != 0 {
-						ClusterLeaders[clusterId] = int(res.Ballot.ProcessID)
-					}
-					if res != nil {
-						log.Printf("Balance for client %v: %v\n", client, res.Balance)
-						resChannel <- struct{}{}
-					}
-				}
-			}(node)
+		ctx, cancelFunc := context.WithTimeout(context.Background(), ContextWindowTime)
+		res, err := GrpcClientMap[ClusterLeaders[clusterId]].ClientReadRequest(ctx, readreq)
+		cancelFunc()
+		if err != nil {
+			if strings.Contains(err.Error(), "LockError") { //222
+				log.Println("ReadOperation: LockError: Retrying..")
+			}
+			time.Sleep(ClientTimerDuration)
+			continue
 		}
-		select {
-		case <-resChannel:
+		if res != nil && err == nil {
+			ClusterLeaders[clusterId] = int(res.Ballot.ProcessID)
+			log.Printf("Response: %v for transaction %v", client, res.Balance)
 			return
-		case <-clientTimer.C:
-			fmt.Println("Client Request Timeout.")
-			fmt.Printf("Retrying: No Response from server for client %v\n", client)
-			// clientTimerDuration
 		}
 	}
 }

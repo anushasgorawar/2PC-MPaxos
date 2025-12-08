@@ -1,4 +1,4 @@
-package paxos
+package twopc
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ func (s *Server) NewView() (map[int]*AcceptLog, int, error) {
 		for _, nodelog := range nodeLogs {
 			msg, err := s.ParseAcceptLog(nodelog, currBallot)
 			if err != nil {
-				log.Println("couldnt parge log: ", nodelog)
+				log.Println("couldnt parse log: ", nodelog)
 				continue
 			}
 			all = append(all, msg)
@@ -44,13 +44,9 @@ func (s *Server) NewView() (map[int]*AcceptLog, int, error) {
 				Ballot:    currBallot,
 				AcceptSeq: int32(i),
 				AcceptVal: &ClientReq{
-					Transaction: &Transaction{
-						Sender:   "",
-						Reciever: "",
-						Amount:   0,
-					},
-					Timestamp: nil,
-					Client:    "",
+					Transaction: &Transaction{},
+					Timestamp:   nil,
+					Client:      "",
 				},
 			}
 		} else {
@@ -79,10 +75,12 @@ func (s *Server) UpdateView() error {
 		waitTimer := time.NewTimer(50 * time.Millisecond)
 		currseq := newView[i].AcceptSeq
 		clientReq := newView[i].AcceptVal
+		pa := newView[i].PA
 		AcceptMsg := &Accept{
 			Ballot:         currBallot,
 			SequenceNumber: currseq,
 			ClientReq:      clientReq,
+			PA:             pa,
 		}
 
 		majorityAccepted := make(chan struct{}, 1)
@@ -90,9 +88,9 @@ func (s *Server) UpdateView() error {
 		log.Println("Sending Accepts: ")
 
 		if clientReq.Timestamp != nil {
-			_, ok := s.TimestampTransactions.Load(clientReq.Timestamp.AsTime().UnixNano())
+			_, ok := s.TimestampStatus.Load(clientReq.Timestamp.AsTime().UnixNano())
 			if !ok {
-				s.TimestampTransactions.Store(clientReq.Timestamp.AsTime().UnixNano(), "in progress")
+				s.TimestampStatus.Store(clientReq.Timestamp.AsTime().UnixNano(), "in progress")
 			}
 		}
 
@@ -103,31 +101,36 @@ func (s *Server) UpdateView() error {
 		}
 
 		fmt.Println("acceptlog: ", acceptlog)
-		status, ok := s.StatusMap.Load(int(currseq))
+		_, ok := s.StatusMap.Load(int(currseq))
 		if !ok {
 			s.StatusMap.Store(int(currseq), "Accepted")
-			status = "Accepted"
 		}
 		go s.SendAcceptsWithTransaction(AcceptMsg, majorityAccepted)
 
 		select {
 		case <-majorityAccepted:
-			if status == "Accepted" {
-				s.StatusMap.Store(int(currseq), "Committed")
-			}
+			status, _ := s.StatusMap.Load(int(currseq))
 			go s.SendCommit(int(currseq), clientReq)
-			if status == "Executed" || status == "no-op" || status == "Committed" {
+			if status == "Executed" || status == "Committed" {
 				continue
 			}
-
-			err = s.Execution(clientReq.Transaction, int(currseq))
+			s.StatusMap.Store(int(currseq), "Committed")
+			if AcceptMsg.PA == "A" {
+				s.StatusMap.Store(int(currseq), "Executed")
+				return nil
+			}
+			if clientReq.Transaction.Sender == "" || clientReq.Transaction.Reciever == "" {
+				err = s.TwoPCExecution(clientReq.Transaction, int(currseq))
+			} else {
+				err = s.TwoPCExecution(clientReq.Transaction, int(currseq))
+			}
+			s.StatusMap.Store(int(currseq), "Executed")
 			if err != nil {
-				s.StatusMap.Store(int(currseq), "no-op")
-				s.TimestampTransactions.Store(clientReq.Timestamp.AsTime().UnixNano(), "Failure")
+				log.Println("Insufficient Balance. no-op for: ", clientReq.Transaction)
+				s.TimestampStatus.Store(clientReq.Timestamp.AsTime().UnixNano(), "Failure")
 				continue
 			} else {
-				s.StatusMap.Store(int(currseq), "Executed")
-				s.TimestampTransactions.Store(clientReq.Timestamp.AsTime().UnixNano(), "Success")
+				s.TimestampStatus.Store(clientReq.Timestamp.AsTime().UnixNano(), "Success")
 				continue
 			}
 		case <-waitTimer.C:

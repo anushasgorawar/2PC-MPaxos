@@ -31,20 +31,18 @@ func CreateDb(server string, clients []string) (datastore *Datastore, closeFunc 
 		log.Fatalf("Could not create dbs for server: %v", server)
 		return nil, nil, err
 	}
-
 	db.Flush()
+	// _, err = db.PrintDB()
+	// if err != nil {
+	// 	log.Fatalf("Could not print balances in datastore: %v", server)
+	// 	return nil, nil, err
+	// }
 
-	_, err = db.PrintDB()
-	if err != nil {
-		log.Fatalf("Could not print balances in datastore: %v", server)
-		return nil, nil, err
-	}
-
-	logs, err := db.GetAllLogs()
-	if err != nil {
-		log.Fatalf("Could not print balances in datastore: %v", server)
-	}
-	log.Println(logs)
+	// logs, err := db.GetAllLogs()
+	// if err != nil {
+	// 	log.Fatalf("Could not print balances in datastore: %v", server)
+	// }
+	// log.Println(logs)
 
 	return db, closeFunc, nil
 }
@@ -67,7 +65,11 @@ func (ds *Datastore) CreateClient(bucket string, key string, value int) error {
 		return tx.Bucket([]byte(bucket)).Put([]byte(key), []byte(strconv.Itoa(value)))
 	})
 }
-
+func (ds *Datastore) RevertClient(key string, value int) error {
+	return ds.BoltDB.Update(func(tx *bolt.Tx) error {
+		return tx.Bucket([]byte(ds.Server)).Put([]byte(key), []byte(strconv.Itoa(value)))
+	})
+}
 func (ds *Datastore) UpdateClient(key string, op string, value int) error {
 	currbalance, err := ds.GetValue(key, ds.Server)
 	if err != nil {
@@ -115,7 +117,7 @@ func (ds *Datastore) GetValue(key string, bucket string) ([]byte, error) {
 func (ds *Datastore) PrintDB() ([]string, error) {
 	log.Printf("Printing balances from datastore %v: ", ds.Server)
 	allBalances := []string{}
-	log.Println("clients=", ds.Clients)
+	// log.Println("clients=", ds.Clients)
 	for _, client := range ds.Clients {
 		balance, err := ds.GetValue(client, ds.Server)
 		if err != nil {
@@ -175,20 +177,19 @@ func (ds *Datastore) GetAllLogs() (logs []string, err error) {
 }
 
 func (ds *Datastore) Flush() error {
-	// log.Println("Purging DB")
+	log.Println("Purging DB")
 	err := ds.InitialiseClients()
 	if err != nil {
 		log.Fatalf("Could not initialise clients in datastore")
 		return err
 	}
 	err = ds.BoltDB.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(ds.Logsbucket))
-		if b == nil {
-			return fmt.Errorf("bucket does not exist")
+		err := tx.DeleteBucket([]byte(ds.Logsbucket))
+		if err != nil && err != bolt.ErrBucketNotFound {
+			return err
 		}
-		return b.ForEach(func(k, v []byte) error {
-			return b.Delete(k)
-		})
+		_, err = tx.CreateBucket([]byte(ds.Logsbucket))
+		return err
 	})
 
 	if err != nil {

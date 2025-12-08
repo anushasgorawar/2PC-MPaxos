@@ -1,9 +1,9 @@
 syntax="proto3";
 
-package paxos;
+package twopc;
 import "google/protobuf/Timestamp.proto";
 
-option go_package = "/paxos";
+option go_package = "/twopc";
 
 message Ballot{
 	int32 SequenceNumber=1;
@@ -21,6 +21,7 @@ message AcceptLog{
 	Ballot Ballot=1;
 	int32 AcceptSeq=2; //sequence number
 	ClientReq AcceptVal=3;
+	string PA=4;
 }
 
 
@@ -28,7 +29,6 @@ message AcceptLog{
 message ClientReq{
 	Transaction Transaction=1;
 	google.protobuf.Timestamp Timestamp = 2;
-
 	string Client=3;
 }
 
@@ -56,6 +56,7 @@ message Accept{
 	Ballot Ballot=1;
 	int32 SequenceNumber=2;
 	ClientReq ClientReq=3;
+	string PA=4;
 }
 // ⟨ACCEPTED,b,s,m,nb⟩
 message Accepted{
@@ -111,15 +112,31 @@ repeated string Log=1;
 message ClientID{
 string ClientID=1;
 }
-
+message ClientIDs{
+repeated ClientID ClientID=1;
+}
 message Empty{}
 
-service Paxos{
+message ClientReadReq{
+string Client=1;
+}
+message ClientReadResp{
+int32 Balance=1;
+Ballot Ballot=2;
+}
+
+service twopc{
 	rpc ClientRequest(ClientReq) returns (ClientResp){};
-	
+	rpc ClientReadRequest(ClientReadReq) returns (ClientReadResp){};
+	rpc IntershardParticipantClientRequest(ClientReq) returns (ClientResp){};
+
 	rpc PrepareRequest(PrepareReq) returns (PromiseAck){};
+	
 	rpc AcceptRequest(Accept) returns (Accepted){};
+	rpc TwoPCAcceptRequest(Accept) returns (Accepted){};
+	
 	rpc Commit(CommitMessage) returns (Empty){};
+	rpc TwoPCPaxosAbortCommit(CommitMessage) returns (Empty){};
 
 	rpc NewViewRequest(NewViewReq) returns (NewView);
 	rpc NewViewUpdate(Ballot) returns (Empty){};
@@ -132,5 +149,30 @@ service Paxos{
 
 	rpc Flush(Empty)returns(Empty); 
 	rpc GetCurrentLeader(Empty)returns (Ballot);
+
+	// ⟨REQUEST,t,τ,c⟩
+	rpc TwoPCClientRequest(ClientReq) returns (ClientResp){};
+	// ⟨PREPARE,t,m⟩ // ⟨PREPARED,t,m⟩ 
+	rpc TwoPCPrepare(TwoPCMessage) returns (Prepared){};
+	// ⟨ABORT,t,m⟩
+	rpc TwoPCAbort(TwoPCMessage) returns (Ack){};
+	// ⟨COMMIT,t,m⟩
+	rpc TwoPCCommit(TwoPCMessage) returns (Ack){};
+
+	rpc UpdateClients(TwoPCMessage) returns (Ack){};
+}
+message TwoPCMessage{
+	Transaction Transaction=1;
+	ClientReq ClientRequest=2;
+}
+
+message Prepared{
+	bool Prepared=1;
+	Transaction Transaction=2;
+	ClientReq ClientRequest=3;
+}
+
+message Ack{
+	bool Ack=1;
 }
 

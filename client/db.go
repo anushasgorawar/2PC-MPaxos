@@ -7,14 +7,14 @@ import (
 	"sync"
 	"time"
 
-	paxos "github.com/F25-CSE535/2pc-anushasgorawar/Paxos"
+	twopc "github.com/F25-CSE535/2pc-anushasgorawar/twopc"
 	"golang.org/x/net/context"
 )
 
 // DB METHODS
 
-func PrintDB(client paxos.PaxosClient) error {
-	ctx, cancelFunc := context.WithTimeout(context.Background(), 2*time.Second)
+func PrintDB(client twopc.TwopcClient) error {
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
 	balances, err := client.PrintDB(ctx, nil)
 	cancelFunc()
 	fmt.Println("Printing the current datastore..")
@@ -35,11 +35,11 @@ func PrintBalance(client string) error {
 		wg.Add(1)
 		node := n
 		c := GrpcClientMap[n]
-		go func(node int, grpcClient paxos.PaxosClient) {
+		go func(node int, grpcClient twopc.TwopcClient) {
 			defer wg.Done()
-			ctx, cancelFunc := context.WithTimeout(context.Background(), 2*time.Second)
+			ctx, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
 			defer cancelFunc()
-			balance, err := grpcClient.PrintBalance(ctx, &paxos.ClientID{ClientID: client})
+			balance, err := grpcClient.PrintBalance(ctx, &twopc.ClientID{ClientID: client})
 			log.Printf("n%v = %v ; ", node, balance)
 			if err != nil {
 				return

@@ -1,112 +1,103 @@
 package main
 
 import (
-	"encoding/csv"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
-	paxos "github.com/F25-CSE535/2pc-anushasgorawar/Paxos"
+	twopc "github.com/F25-CSE535/2pc-anushasgorawar/twopc"
 )
 
-var (
-	reTriple = regexp.MustCompile(`\((\d+),\s*(\d+),\s*(\d+)\)`)
-	reSingle = regexp.MustCompile(`\((\d+)\)`)
-	reOp     = regexp.MustCompile(`([A-Z])\(n(\d+)\)`) // R(n6), F(n3)
-	reNodes  = regexp.MustCompile(`n(\d+)`)
-)
+func ReadTransactions(filePath string) ([][][]*twopc.Transaction, [][]int, error) {
 
-func ReadTransactions(filePath string) ([][][]*paxos.Transaction, [][]int, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer f.Close()
-
-	r := csv.NewReader(f)
-	r.FieldsPerRecord = -1
-
-	rows, err := r.ReadAll()
+	rawBytes, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var allSets [][][]*paxos.Transaction // FINAL: sets → groups → tx
+	lines := strings.Split(string(rawBytes), "\n")
+
+	reSetNum := regexp.MustCompile(`^(\d+)\s*,`)
+	reNodes := regexp.MustCompile(`\[(.*?)\]`)
+	reTriple := regexp.MustCompile(`\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)\)`)
+	reSingle := regexp.MustCompile(`\((\d+)\)`)
+	reOp := regexp.MustCompile(`([FR])\(n(\d+)\)`)
+	reToken := regexp.MustCompile(`([FR]\(n\d+\)|\([^)]*\))`)
+
+	var allSets [][][]*twopc.Transaction
 	var liveNodes [][]int
 
-	var currentSetGroups [][]*paxos.Transaction
-	var currentGroup []*paxos.Transaction
-	currentSet := -1
+	var segments [][]*twopc.Transaction
+	var currentSegment []*twopc.Transaction
+	inSet := false
 
-	for _, row := range rows {
-		for colIndex, col := range row {
-			col = strings.TrimSpace(col)
-			if col == "" {
-				continue
+	flushSet := func() {
+		if len(currentSegment) > 0 {
+			segments = append(segments, currentSegment)
+		}
+		if len(segments) > 0 {
+			allSets = append(allSets, segments)
+		}
+		segments = [][]*twopc.Transaction{}
+		currentSegment = []*twopc.Transaction{}
+	}
+
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw)
+		if line == "" {
+			continue
+		}
+
+		// NEW SET NUMBER
+		if m := reSetNum.FindStringSubmatch(line); m != nil {
+			if inSet {
+				flushSet()
 			}
+			inSet = true
+		}
 
-			// --------------------------
-			// Detect new set number
-			// --------------------------
-			if colIndex == 0 {
-				if n, err := strconv.Atoi(col); err == nil {
-					// push previous set
-					if currentSet != -1 {
-						if len(currentGroup) > 0 {
-							currentSetGroups = append(currentSetGroups, currentGroup)
-						}
-						allSets = append(allSets, currentSetGroups)
-					}
-					// reset
-					currentSet = n
-					currentSetGroups = [][]*paxos.Transaction{}
-					currentGroup = []*paxos.Transaction{}
-					continue
+		// LIVE NODES
+		if m := reNodes.FindStringSubmatch(line); m != nil {
+			rawlist := m[1]
+			parts := strings.Split(rawlist, ",")
+			var ids []int
+			for _, p := range parts {
+				p = strings.TrimSpace(p)
+				p = strings.TrimPrefix(p, "n")
+				if v, err := strconv.Atoi(p); err == nil {
+					ids = append(ids, v)
 				}
 			}
+			liveNodes = append(liveNodes, ids)
+		}
 
-			// --------------------------
-			// Live nodes
-			// --------------------------
-			if strings.HasPrefix(col, "[") {
-				nodes := reNodes.FindAllStringSubmatch(col, -1)
-				var ids []int
-				for _, v := range nodes {
-					id, _ := strconv.Atoi(v[1])
-					ids = append(ids, id)
-				}
-				liveNodes = append(liveNodes, ids)
-				continue
-			}
+		// PARSE TOKENS
+		tokens := reToken.FindAllString(line, -1)
 
-			// --------------------------
-			// R(nX) or F(nX) → split here!
-			// --------------------------
-			if m := reOp.FindStringSubmatch(col); m != nil {
-				// close current group
-				if len(currentGroup) > 0 {
-					currentSetGroups = append(currentSetGroups, currentGroup)
+		for _, tok := range tokens {
+
+			// F(nX) or R(nX)
+			if m := reOp.FindStringSubmatch(tok); m != nil {
+				// close current segment
+				if len(currentSegment) > 0 {
+					segments = append(segments, currentSegment)
 				}
-				currentGroup = []*paxos.Transaction{
+				currentSegment = []*twopc.Transaction{}
+				segments = append(segments, []*twopc.Transaction{
 					{
-						Sender:   m[1],
+						Sender:   m[1], // "F" or "R"
 						Reciever: m[2],
 						Amount:   0,
 					},
-				}
-				// finalize this as its own group
-				currentSetGroups = append(currentSetGroups, currentGroup)
-				currentGroup = []*paxos.Transaction{} // start new group after this
+				})
 				continue
 			}
 
-			// --------------------------
 			// (a, b, c)
-			// --------------------------
-			if m := reTriple.FindStringSubmatch(col); m != nil {
+			if m := reTriple.FindStringSubmatch(tok); m != nil {
 				amt, _ := strconv.Atoi(m[3])
-				currentGroup = append(currentGroup, &paxos.Transaction{
+				currentSegment = append(currentSegment, &twopc.Transaction{
 					Sender:   m[1],
 					Reciever: m[2],
 					Amount:   int32(amt),
@@ -114,11 +105,9 @@ func ReadTransactions(filePath string) ([][][]*paxos.Transaction, [][]int, error
 				continue
 			}
 
-			// --------------------------
 			// (X)
-			// --------------------------
-			if m := reSingle.FindStringSubmatch(col); m != nil {
-				currentGroup = append(currentGroup, &paxos.Transaction{
+			if m := reSingle.FindStringSubmatch(tok); m != nil {
+				currentSegment = append(currentSegment, &twopc.Transaction{
 					Sender:   m[1],
 					Reciever: "",
 					Amount:   0,
@@ -128,12 +117,8 @@ func ReadTransactions(filePath string) ([][][]*paxos.Transaction, [][]int, error
 		}
 	}
 
-	// finalize last set
-	if len(currentGroup) > 0 {
-		currentSetGroups = append(currentSetGroups, currentGroup)
-	}
-	if len(currentSetGroups) > 0 {
-		allSets = append(allSets, currentSetGroups)
+	if inSet {
+		flushSet()
 	}
 
 	return allSets, liveNodes, nil
