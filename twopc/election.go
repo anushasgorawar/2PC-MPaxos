@@ -13,12 +13,12 @@ func (s *Server) Checkelectiontimer() {
 	for {
 		log.Printf("Waiting for election timer to run out..")
 		<-s.ElectionTimer.C
-		s.Mapmu.Lock()
+		// s.Mapmu.Lock()
 		// s.CurrLeaderBallot = &Ballot{
 		// 	SequenceNumber: 0,
 		// 	ProcessID:      0,
 		// }
-		s.Mapmu.Unlock()
+		// s.Mapmu.Unlock()
 		if !s.ElectionTimer.Stop() {
 			select {
 			case <-s.ElectionTimer.C: //draining here

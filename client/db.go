@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"sync"
 	"time"
@@ -13,34 +12,35 @@ import (
 
 // DB METHODS
 
-func PrintDB(client twopc.TwopcClient) error {
-	ctx, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
-	balances, err := client.PrintDB(ctx, nil)
-	cancelFunc()
-	fmt.Println("Printing the current datastore..")
-	for _, balance := range balances.Balance {
-		fmt.Println(balance.Balance)
+func PrintDB(accounts []string) error {
+	fmt.Println("Accounts are: ")
+	fmt.Println(accounts)
+	var err error
+	for _, account := range accounts {
+		err := PrintBalance(account)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func PrintBalance(client string) error {
 	clientid, _ := strconv.Atoi(client)
 	clusterid := GetClusterID(clientid)
 	var wg sync.WaitGroup
+	fmt.Println("Account: ", client)
 	for _, n := range Clusters[clusterid] {
 		wg.Add(1)
 		node := n
 		c := GrpcClientMap[n]
+
 		go func(node int, grpcClient twopc.TwopcClient) {
 			defer wg.Done()
 			ctx, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
 			defer cancelFunc()
 			balance, err := grpcClient.PrintBalance(ctx, &twopc.ClientID{ClientID: client})
-			log.Printf("n%v = %v ; ", node, balance)
+			fmt.Printf("n%v = %v ; \n", node, balance)
 			if err != nil {
 				return
 			}
@@ -57,13 +57,17 @@ func PrintView() error {
 		node := i
 		c := client
 		go func(node int, c twopc.TwopcClient) {
+			fmt.Println("Node: ", i)
 			defer wg.Done()
 			ctx, cancelFunc := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancelFunc()
 			views, err := c.PrintView(ctx, nil) //FIXME: implement in rpc.go
 			for _, view := range views.NewView {
-				log.Println("Ballot: ", view.Ballot)
-				log.Println(view.Logs)
+				fmt.Println("Ballot: ", view.Ballot)
+				// fmt.Println(view.Logs)
+				for _, log := range view.Logs {
+					fmt.Println(log)
+				}
 			}
 			if err != nil {
 				return

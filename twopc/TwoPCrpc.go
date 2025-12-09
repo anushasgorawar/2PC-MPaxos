@@ -426,7 +426,7 @@ func (s *Server) TwoPCAbort(ctx context.Context, twoPCMessage *TwoPCMessage) (*A
 	case <-majorityAccepted:
 		go s.TwoPCSendAbortCommit(currseq, twoPCMessage)
 		err := s.RevertTwoPCExecution(dataitem)
-		log.Println("Reverted Transaction: ", clientReq.Transaction)
+		fmt.Println("Reverted Transaction: ", clientReq.Transaction)
 		if err != nil {
 			s.LockTable.Delete(dataitem)
 			s.TimestampStatus.Store(clientReq.Timestamp.AsTime().UnixNano(), "Failure")
@@ -491,7 +491,7 @@ func (s *Server) TwoPCPaxosAbortCommit(ctx context.Context, commitMessage *Commi
 		dataitem = commitMessage.ClientReq.Transaction.Reciever
 	}
 	err := s.RevertTwoPCExecution(dataitem)
-	log.Println("Reverted Transaction: ", commitMessage.ClientReq.Transaction)
+	fmt.Println("Reverted Transaction: ", commitMessage.ClientReq.Transaction)
 	s.StatusMap.Store(int(commitMessage.SequenceNumber), "Executed")
 	s.LockTable.Delete(dataitem)
 	//fIXME: update the datastore.

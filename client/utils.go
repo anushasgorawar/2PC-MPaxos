@@ -43,3 +43,26 @@ func Flush() {
 	ClusterLeaders = []int{0, 1, 4, 7}
 	time.Sleep(1 * time.Second)
 }
+func GetUniqueAccounts(segments [][]*twopc.Transaction) []string {
+	accounts := make(map[string]struct{})
+
+	for _, segment := range segments {
+		for _, t := range segment {
+			if t.Amount == 0 {
+				continue
+			}
+			if t.Sender != "" && t.Reciever != "" {
+				accounts[t.Sender] = struct{}{}
+				accounts[t.Reciever] = struct{}{}
+			}
+		}
+	}
+
+	// convert map → slice
+	result := make([]string, 0, len(accounts))
+	for acc := range accounts {
+		result = append(result, acc)
+	}
+
+	return result
+}

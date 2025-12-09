@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
 	"strings"
 	"sync"
@@ -46,27 +47,26 @@ var (
 func main() {
 	log.Println("Starting client")
 	InitGRPCMap()
-	// filePath := "CSE535-F25-Project-3-Testcases.csv"
-	filePath := "testcases.csv"
+	filePath := "CSE535-F25-Project-3-Testcases.csv"
+	// filePath := "testcases.csv"
 	sets, availablenodes, err := ReadTransactions(filePath)
 	if err != nil {
 		log.Fatal("could not read CSV. Try again")
 		return
 	}
 
+	accounts := []string{}
 	for set := 0; set < len(sets)+1; {
 		fmt.Println("Choose an option:\n1. PrintDB\n2. PrintBalance\n3. PrintView 4. PrintPerformance\nDefault: Continue to the next set")
 
 		var choice int
 		fmt.Print("Enter your choice (1-5):\n")
 		fmt.Scanln(&choice)
-		id := -1
+		// id := -1
 		balanceclient := ""
 		switch choice {
 		case 1:
-			fmt.Print("Enter the node id (1-5): ")
-			fmt.Scanln(&id)
-			err := PrintDB(GrpcClientMap[id])
+			err := PrintDB(accounts)
 			if err != nil {
 				log.Println("Could not PrintDB:", err)
 			}
@@ -97,6 +97,7 @@ func main() {
 			updateAvailability(availablenodes[set])
 			fmt.Println("set's avaialble nodes: ", availablenodes[set])
 			log.Println("Transactions: ", sets[set])
+			accounts = GetUniqueAccounts(sets[set])
 			i := len(sets[set])
 			// var wg sync.WaitGroup
 			CurrStartTime = time.Now()
@@ -205,12 +206,17 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 				ReadOperation(t.Sender, clusterId)
 				return
 			}
+			// offset := time.Duration(rand.Intn(1_000_000)) * time.Nanosecond
+
+			transactionts := timestamppb.New(
+				time.Now().Add(time.Duration(rand.Intn(1_000_000)) * time.Nanosecond),
+			)
 			message := &twopc.ClientReq{
 				Transaction: t,
-				Timestamp:   timestamppb.Now(),
+				Timestamp:   transactionts,
 				Client:      t.Sender,
 			}
-			ctx, cancelFunc := context.WithTimeout(context.Background(), ClientTimerDuration)
+			ctx, _ := context.WithTimeout(context.Background(), ClientTimerDuration)
 			start := time.Now()
 			res, err := GrpcClientMap[ClusterLeaders[clusterId]].TwoPCClientRequest(ctx, message)
 			latency := time.Since(start)
@@ -218,7 +224,7 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 			CurrTotalLatency += latency
 			CurrTransactionCount++
 			MetricsMu.Unlock()
-			cancelFunc()
+			// cancelFunc()
 			// log.Println(res)
 			log.Println(err)
 			if err != nil {
@@ -227,6 +233,10 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 				}
 				if strings.Contains(err.Error(), "DeadlineExceeded") {
 					log.Printf("Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", t)
+				}
+				if strings.Contains(err.Error(), "request still in progress") {
+					log.Printf("Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", t)
+					time.Sleep(200 * time.Millisecond)
 				}
 				BroadcastClientrequest(clusterId, message.Client, message)
 				return
@@ -251,7 +261,7 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 	for {
 		fmt.Println("Broadcasting transaction:", request.Transaction)
 		resChannel := make(chan struct{}, 1)
-		clientTimerDuration := 3 * time.Second
+		clientTimerDuration := 5 * time.Second
 		clientTimer := time.NewTimer(clientTimerDuration)
 		for _, nodeClient := range Clusters[clusterId] {
 			node := nodeClient

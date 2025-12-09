@@ -2,6 +2,7 @@ package twopc
 
 import (
 	"context"
+	"fmt"
 	"log"
 )
 
@@ -35,7 +36,7 @@ func (s *Server) PrintView(ctx context.Context, empty *Empty) (*PrintNewViews, e
 			Logs:   view,
 		})
 	}
-	log.Println("Printview: ")
-	log.Println(finalview)
+	fmt.Println("Printview: ")
+	fmt.Println(finalview)
 	return finalview, nil
 }
