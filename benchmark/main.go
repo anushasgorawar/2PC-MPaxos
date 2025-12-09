@@ -50,10 +50,10 @@ func main() {
 	InitGRPCMap()
 
 	benchmarkConfig := &BenchmarkConfig{
-		TotalOperations: 3000,
+		TotalOperations: 1000,
 		ReadWriteRatio:  0.5,
-		CrossShardRatio: 0.0,
-		Skew:            0,
+		CrossShardRatio: 0.5,
+		Skew:            0.1,
 	}
 
 	Clients := make([]string, 9000)
@@ -61,10 +61,12 @@ func main() {
 		Clients[i-1] = strconv.Itoa(i)
 	}
 	//total int, readWriteRatio, crossShardRatio, skew float64
+	log.Println("Creating workload")
 	transactions := CreateWorkload(benchmarkConfig.TotalOperations, benchmarkConfig.ReadWriteRatio, benchmarkConfig.CrossShardRatio, benchmarkConfig.Skew)
 
+	log.Println("After workload creation")
+
 	result := make(chan struct{})
-	Flush()
 	log.Println(transactions)
 	// var wg sync.WaitGroup
 	CurrStartTime = time.Now()
@@ -89,7 +91,6 @@ func InitGRPCMap() {
 		// grpcClient.Flush(context.Background(), nil)
 		log.Println("GRPC client ", GrpcClientMap)
 	}
-	Flush()
 }
 
 func RunTransactions(transactions []*twopc.Transaction, result chan struct{}) error {
@@ -123,6 +124,7 @@ func RunTransactions(transactions []*twopc.Transaction, result chan struct{}) er
 				if strings.Contains(err.Error(), "LockError") {
 					log.Printf("LockError: Transaction %v failed, Retrying..", t)
 					BroadcastClientrequest(clusterId, message.Client, message)
+					time.Sleep(ClientTimerDuration)
 					return
 				}
 				if strings.Contains(err.Error(), "DeadlineExceeded") {
@@ -169,6 +171,7 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 					}
 					if strings.Contains(err.Error(), "DeadlineExceeded") {
 						log.Printf("Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", request.Transaction)
+						resChannel <- struct{}{}
 						return
 					}
 					log.Println("BroadcastClientrequest: Could not connect: ", err.Error())

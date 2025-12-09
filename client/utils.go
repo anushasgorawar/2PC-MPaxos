@@ -40,5 +40,6 @@ func Flush() {
 	CurrTotalTime = 0
 	CurrTotalLatency = 0
 	CurrTransactionCount = 0
+	ClusterLeaders = []int{0, 1, 4, 7}
 	time.Sleep(1 * time.Second)
 }

@@ -101,15 +101,18 @@ func main() {
 				t := sets[set][j]
 				switch t[0].Sender {
 				case "F":
-					go FailNode(t[0].Reciever, resChannel)
 					time.Sleep(2 * time.Second)
+					FailNode(t[0].Reciever, resChannel)
 				case "R":
-					go RecoverNode(t[0].Reciever, resChannel)
+					time.Sleep(2 * time.Second)
+					RecoverNode(t[0].Reciever, resChannel)
 				default:
+					time.Sleep(2 * time.Second)
 					go RunTransactions(sets[set][j], resChannel)
+					// <-resChannel
 				}
-				time.Sleep(1 * time.Second)
-				// <-resChannel
+				// time.Sleep(1 * time.Second)
+
 			}
 			// wg.Wait()
 			CurrTotalTime = time.Since(CurrStartTime)
@@ -157,7 +160,7 @@ func updateAvailability(availableNodes []int) error {
 }
 
 func FailNode(node string, resChannel chan struct{}) {
-	time.Sleep(1 * time.Second)
+	// time.Sleep(1 * time.Second)
 	log.Println("Failing node:", node)
 	n, _ := strconv.Atoi(node)
 	ctx, cancelFunc := context.WithTimeout(context.Background(), ContextWindowTime)
@@ -166,8 +169,8 @@ func FailNode(node string, resChannel chan struct{}) {
 		log.Println("Could not fail node: ", node)
 	}
 	cancelFunc()
-	time.Sleep(1 * time.Second)
-	resChannel <- struct{}{}
+	// time.Sleep(1 * time.Second)
+	// resChannel <- struct{}{}
 }
 
 func RecoverNode(node string, resChannel chan struct{}) {
@@ -179,7 +182,7 @@ func RecoverNode(node string, resChannel chan struct{}) {
 		log.Println("Could not fail node: ", node)
 	}
 	cancelFunc()
-	resChannel <- struct{}{}
+	// resChannel <- struct{}{}
 }
 
 func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}) error {
@@ -232,6 +235,8 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 		}(t)
 	}
 	wg.Wait()
+
+	// <-resChannel
 	return nil
 }
 

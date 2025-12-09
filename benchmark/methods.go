@@ -75,7 +75,6 @@ func pickIDWithSkew(skew float64) int {
 	return randUniform(min, max)
 }
 
-
 func CreateWorkload(total int, readWriteRatio, crossShardRatio, skew float64) []*twopc.Transaction {
 	workload := make([]*twopc.Transaction, 0, total)
 
@@ -84,30 +83,29 @@ func CreateWorkload(total int, readWriteRatio, crossShardRatio, skew float64) []
 	numCrossShard := int(float64(numReadWrite) * crossShardRatio)
 	numIntraShard := numReadWrite - numCrossShard
 
-	// 1. Read-only: (s) → Reciever empty, Amount 0
+	// 1. Read-only: Sender only
 	for i := 0; i < numReadOnly; i++ {
-		id := pickIDWithSkew(skew)
+		s := pickIDWithSkew(skew)
 		workload = append(workload, &twopc.Transaction{
-			Sender: strconv.Itoa(id),
-			// Reciever: "",
-			// Amount:   0,
+			Sender: strconv.Itoa(s),
 		})
 	}
 
-	// 2. Intra-shard read-write
+	// 2. Intra-shard read-write (Sender and Receiver must be in the same shard)
 	for i := 0; i < numIntraShard; i++ {
 		s := pickIDWithSkew(skew)
-		shard := getShard(s)
+		shardS := getShard(s)
 
+		// Pick receiver uniformly inside SAME shard → always terminates
 		var r int
 		for {
-			r = pickIDWithSkew(skew)
-			if getShard(r) == shard {
+			r = randUniform(1, 9000)
+			if getShard(r) == shardS && r != s {
 				break
 			}
 		}
-		amount := int32(randUniform(1, 10))
 
+		amount := int32(randUniform(1, 10))
 		workload = append(workload, &twopc.Transaction{
 			Sender:   strconv.Itoa(s),
 			Reciever: strconv.Itoa(r),
@@ -115,18 +113,21 @@ func CreateWorkload(total int, readWriteRatio, crossShardRatio, skew float64) []
 		})
 	}
 
-	// 3. Cross-shard read-write
+	// 3. Cross-shard read-write (Sender and Receiver must be in DIFFERENT shards)
 	for i := 0; i < numCrossShard; i++ {
 		s := pickIDWithSkew(skew)
+		shardS := getShard(s)
+
+		// Pick receiver uniformly from ANY shard EXCEPT shardS → always terminates
 		var r int
 		for {
-			r = pickIDWithSkew(skew)
-			if getShard(r) != getShard(s) {
+			r = randUniform(1, 9000)
+			if getShard(r) != shardS {
 				break
 			}
 		}
-		amount := int32(randUniform(1, 10))
 
+		amount := int32(randUniform(1, 10))
 		workload = append(workload, &twopc.Transaction{
 			Sender:   strconv.Itoa(s),
 			Reciever: strconv.Itoa(r),
@@ -134,7 +135,7 @@ func CreateWorkload(total int, readWriteRatio, crossShardRatio, skew float64) []
 		})
 	}
 
-	// Optional: shuffle to mix reads, intra, cross
+	// Shuffle so mix is random
 	rand.Shuffle(len(workload), func(i, j int) {
 		workload[i], workload[j] = workload[j], workload[i]
 	})

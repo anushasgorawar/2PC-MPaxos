@@ -77,7 +77,7 @@ func (s *Server) ClientRequest(ctx context.Context, clientReq *ClientReq) (*Clie
 		if s.CurrLeaderBallot.ProcessID != 0 && s.CurrLeaderBallot.ProcessID != int32(s.Id) {
 			log.Printf("node %v is not the leader. Redirecting to node %v", s.Id, s.CurrLeaderBallot.ProcessID)
 			ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
-			return s.GrpcClientMap[Nodes[int(s.CurrLeaderBallot.ProcessID)]].ClientRequest(ctx, clientReq)//80
+			return s.GrpcClientMap[Nodes[int(s.CurrLeaderBallot.ProcessID)]].ClientRequest(ctx, clientReq)
 		} else {
 			return nil, fmt.Errorf("node %v is not aware of the new leader", s.Id)
 		}
