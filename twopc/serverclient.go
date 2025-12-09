@@ -73,6 +73,7 @@ func (s *Server) InitialisePaxosNode(clients []string) error {
 		SequenceNumber: 0,
 		ProcessID:      0,
 	}
+	s.PrintNewView = make(map[*Ballot][]string)
 	// s.WAL = map[*Transaction]map[string]int{}
 	log.Printf("Database created for server: %v", s.Addr)
 	go func() {

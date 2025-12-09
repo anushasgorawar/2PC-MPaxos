@@ -35,11 +35,11 @@ type Server struct {
 
 	LockTable sync.Map
 
-	HighestBallotSeen  *Ballot
-	CurrSequenceNumber int
-	IsNewViewRequired  bool
-	NewViewRecieved    [][]string
-
+	HighestBallotSeen   *Ballot
+	CurrSequenceNumber  int
+	IsNewViewRequired   bool
+	NewViewRecieved     [][]string
+	PrintNewView        map[*Ballot][]string
 	LastPrepareReceived time.Time
 	Tp                  time.Duration
 
@@ -436,6 +436,7 @@ func (s *Server) Flush(ctx context.Context, empty *Empty) (*Empty, error) {
 		SequenceNumber: 0,
 		ProcessID:      0,
 	}
+	s.PrintNewView = make(map[*Ballot][]string)
 	if s.Id == 1 || s.Id == 4 || s.Id == 7 {
 		s.ElectionTimerDuration = 1 * time.Second
 		s.ElectionTimer.Reset(1 * time.Second)

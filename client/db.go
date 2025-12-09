@@ -50,3 +50,27 @@ func PrintBalance(client string) error {
 	}
 	return nil
 }
+func PrintView() error {
+	var wg sync.WaitGroup
+	for i, client := range GrpcClientMap {
+		wg.Add(1)
+		node := i
+		c := client
+		go func(node int, c twopc.TwopcClient) {
+			defer wg.Done()
+			ctx, cancelFunc := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancelFunc()
+			views, err := c.PrintView(ctx, nil) //FIXME: implement in rpc.go
+			for _, view := range views.NewView {
+				log.Println("Ballot: ", view.Ballot)
+				log.Println(view.Logs)
+			}
+			if err != nil {
+				return
+			}
+
+		}(node, c)
+		wg.Wait()
+	}
+	return nil
+}

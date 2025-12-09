@@ -33,6 +33,7 @@ const (
 	Twopc_PrintDB_FullMethodName                            = "/twopc.twopc/PrintDB"
 	Twopc_PrintLogs_FullMethodName                          = "/twopc.twopc/PrintLogs"
 	Twopc_PrintBalance_FullMethodName                       = "/twopc.twopc/PrintBalance"
+	Twopc_PrintView_FullMethodName                          = "/twopc.twopc/PrintView"
 	Twopc_Flush_FullMethodName                              = "/twopc.twopc/Flush"
 	Twopc_GetCurrentLeader_FullMethodName                   = "/twopc.twopc/GetCurrentLeader"
 	Twopc_TwoPCClientRequest_FullMethodName                 = "/twopc.twopc/TwoPCClientRequest"
@@ -60,6 +61,7 @@ type TwopcClient interface {
 	PrintDB(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AllBalance, error)
 	PrintLogs(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AllLogs, error)
 	PrintBalance(ctx context.Context, in *ClientID, opts ...grpc.CallOption) (*Balance, error)
+	PrintView(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PrintNewViews, error)
 	Flush(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	GetCurrentLeader(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Ballot, error)
 	// ⟨REQUEST,t,τ,c⟩
@@ -221,6 +223,16 @@ func (c *twopcClient) PrintBalance(ctx context.Context, in *ClientID, opts ...gr
 	return out, nil
 }
 
+func (c *twopcClient) PrintView(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PrintNewViews, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PrintNewViews)
+	err := c.cc.Invoke(ctx, Twopc_PrintView_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *twopcClient) Flush(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
@@ -309,6 +321,7 @@ type TwopcServer interface {
 	PrintDB(context.Context, *Empty) (*AllBalance, error)
 	PrintLogs(context.Context, *Empty) (*AllLogs, error)
 	PrintBalance(context.Context, *ClientID) (*Balance, error)
+	PrintView(context.Context, *Empty) (*PrintNewViews, error)
 	Flush(context.Context, *Empty) (*Empty, error)
 	GetCurrentLeader(context.Context, *Empty) (*Ballot, error)
 	// ⟨REQUEST,t,τ,c⟩
@@ -371,6 +384,9 @@ func (UnimplementedTwopcServer) PrintLogs(context.Context, *Empty) (*AllLogs, er
 }
 func (UnimplementedTwopcServer) PrintBalance(context.Context, *ClientID) (*Balance, error) {
 	return nil, status.Error(codes.Unimplemented, "method PrintBalance not implemented")
+}
+func (UnimplementedTwopcServer) PrintView(context.Context, *Empty) (*PrintNewViews, error) {
+	return nil, status.Error(codes.Unimplemented, "method PrintView not implemented")
 }
 func (UnimplementedTwopcServer) Flush(context.Context, *Empty) (*Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method Flush not implemented")
@@ -666,6 +682,24 @@ func _Twopc_PrintBalance_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Twopc_PrintView_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TwopcServer).PrintView(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Twopc_PrintView_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TwopcServer).PrintView(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Twopc_Flush_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
@@ -854,6 +888,10 @@ var Twopc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PrintBalance",
 			Handler:    _Twopc_PrintBalance_Handler,
+		},
+		{
+			MethodName: "PrintView",
+			Handler:    _Twopc_PrintView_Handler,
 		},
 		{
 			MethodName: "Flush",

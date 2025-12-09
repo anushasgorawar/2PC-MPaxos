@@ -458,7 +458,7 @@ func (s *Server) TwoPCSendAbortCommit(currseq int, twoPCMessage *TwoPCMessage) {
 		}
 		s.ElectionTimer.Reset(s.ElectionTimerDuration)
 		for i, grpcclient := range s.GrpcClientMap {
-			log.Printf("Sending commit to %v", i)
+			log.Printf("Sending TwoPCPaxosAbortCommit to %v", i)
 			grpcC := grpcclient
 			wg.Add(1)
 			go func() {
@@ -491,11 +491,13 @@ func (s *Server) TwoPCPaxosAbortCommit(ctx context.Context, commitMessage *Commi
 		dataitem = commitMessage.ClientReq.Transaction.Reciever
 	}
 	err := s.RevertTwoPCExecution(dataitem)
+	log.Println("Reverted Transaction: ", commitMessage.ClientReq.Transaction)
 	s.StatusMap.Store(int(commitMessage.SequenceNumber), "Executed")
 	s.LockTable.Delete(dataitem)
 	//fIXME: update the datastore.
 	return nil, err
 }
+
 func (s *Server) TwoPCSendAcceptsWithTransaction(acceptMsg *Accept, majorityAccepted chan (struct{})) {
 	log.Println("SendAcceptsWithTransaction A", acceptMsg.ClientReq.Transaction)
 	if !s.IsAvailable {
@@ -519,7 +521,7 @@ func (s *Server) TwoPCSendAcceptsWithTransaction(acceptMsg *Accept, majorityAcce
 			grpcC := grpcclient
 			wg.Add(1)
 			go func() {
-				log.Printf("Sending SendAcceptsWithTransaction to %v", i)
+				log.Printf("Sending TwoPCAcceptRequest to %v", i)
 				_, err := grpcC.TwoPCAcceptRequest(context.Background(), acceptMsg)
 				if err != nil {
 					// log.Printf("Unreachable node %v", i)

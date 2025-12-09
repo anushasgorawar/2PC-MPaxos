@@ -1298,6 +1298,102 @@ func (x *ClientReadResp) GetBallot() *Ballot {
 	return nil
 }
 
+type PrintnewView struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ballot        *Ballot                `protobuf:"bytes,1,opt,name=Ballot,proto3" json:"Ballot,omitempty"`
+	Logs          []string               `protobuf:"bytes,2,rep,name=Logs,proto3" json:"Logs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PrintnewView) Reset() {
+	*x = PrintnewView{}
+	mi := &file_twopc_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PrintnewView) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PrintnewView) ProtoMessage() {}
+
+func (x *PrintnewView) ProtoReflect() protoreflect.Message {
+	mi := &file_twopc_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PrintnewView.ProtoReflect.Descriptor instead.
+func (*PrintnewView) Descriptor() ([]byte, []int) {
+	return file_twopc_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *PrintnewView) GetBallot() *Ballot {
+	if x != nil {
+		return x.Ballot
+	}
+	return nil
+}
+
+func (x *PrintnewView) GetLogs() []string {
+	if x != nil {
+		return x.Logs
+	}
+	return nil
+}
+
+type PrintNewViews struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NewView       []*PrintnewView        `protobuf:"bytes,1,rep,name=newView,proto3" json:"newView,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PrintNewViews) Reset() {
+	*x = PrintNewViews{}
+	mi := &file_twopc_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PrintNewViews) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PrintNewViews) ProtoMessage() {}
+
+func (x *PrintNewViews) ProtoReflect() protoreflect.Message {
+	mi := &file_twopc_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PrintNewViews.ProtoReflect.Descriptor instead.
+func (*PrintNewViews) Descriptor() ([]byte, []int) {
+	return file_twopc_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *PrintNewViews) GetNewView() []*PrintnewView {
+	if x != nil {
+		return x.NewView
+	}
+	return nil
+}
+
 type TwoPCMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Transaction   *Transaction           `protobuf:"bytes,1,opt,name=Transaction,proto3" json:"Transaction,omitempty"`
@@ -1308,7 +1404,7 @@ type TwoPCMessage struct {
 
 func (x *TwoPCMessage) Reset() {
 	*x = TwoPCMessage{}
-	mi := &file_twopc_proto_msgTypes[25]
+	mi := &file_twopc_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1320,7 +1416,7 @@ func (x *TwoPCMessage) String() string {
 func (*TwoPCMessage) ProtoMessage() {}
 
 func (x *TwoPCMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_twopc_proto_msgTypes[25]
+	mi := &file_twopc_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1333,7 +1429,7 @@ func (x *TwoPCMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TwoPCMessage.ProtoReflect.Descriptor instead.
 func (*TwoPCMessage) Descriptor() ([]byte, []int) {
-	return file_twopc_proto_rawDescGZIP(), []int{25}
+	return file_twopc_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *TwoPCMessage) GetTransaction() *Transaction {
@@ -1361,7 +1457,7 @@ type Prepared struct {
 
 func (x *Prepared) Reset() {
 	*x = Prepared{}
-	mi := &file_twopc_proto_msgTypes[26]
+	mi := &file_twopc_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1373,7 +1469,7 @@ func (x *Prepared) String() string {
 func (*Prepared) ProtoMessage() {}
 
 func (x *Prepared) ProtoReflect() protoreflect.Message {
-	mi := &file_twopc_proto_msgTypes[26]
+	mi := &file_twopc_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1386,7 +1482,7 @@ func (x *Prepared) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Prepared.ProtoReflect.Descriptor instead.
 func (*Prepared) Descriptor() ([]byte, []int) {
-	return file_twopc_proto_rawDescGZIP(), []int{26}
+	return file_twopc_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *Prepared) GetPrepared() bool {
@@ -1419,7 +1515,7 @@ type Ack struct {
 
 func (x *Ack) Reset() {
 	*x = Ack{}
-	mi := &file_twopc_proto_msgTypes[27]
+	mi := &file_twopc_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1431,7 +1527,7 @@ func (x *Ack) String() string {
 func (*Ack) ProtoMessage() {}
 
 func (x *Ack) ProtoReflect() protoreflect.Message {
-	mi := &file_twopc_proto_msgTypes[27]
+	mi := &file_twopc_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1444,7 +1540,7 @@ func (x *Ack) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Ack.ProtoReflect.Descriptor instead.
 func (*Ack) Descriptor() ([]byte, []int) {
-	return file_twopc_proto_rawDescGZIP(), []int{27}
+	return file_twopc_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *Ack) GetAck() bool {
@@ -1534,7 +1630,12 @@ const file_twopc_proto_rawDesc = "" +
 	"\x06Client\x18\x01 \x01(\tR\x06Client\"Q\n" +
 	"\x0eClientReadResp\x12\x18\n" +
 	"\aBalance\x18\x01 \x01(\x05R\aBalance\x12%\n" +
-	"\x06Ballot\x18\x02 \x01(\v2\r.twopc.BallotR\x06Ballot\"|\n" +
+	"\x06Ballot\x18\x02 \x01(\v2\r.twopc.BallotR\x06Ballot\"I\n" +
+	"\fPrintnewView\x12%\n" +
+	"\x06Ballot\x18\x01 \x01(\v2\r.twopc.BallotR\x06Ballot\x12\x12\n" +
+	"\x04Logs\x18\x02 \x03(\tR\x04Logs\">\n" +
+	"\rPrintNewViews\x12-\n" +
+	"\anewView\x18\x01 \x03(\v2\x13.twopc.PrintnewViewR\anewView\"|\n" +
 	"\fTwoPCMessage\x124\n" +
 	"\vTransaction\x18\x01 \x01(\v2\x12.twopc.TransactionR\vTransaction\x126\n" +
 	"\rClientRequest\x18\x02 \x01(\v2\x10.twopc.ClientReqR\rClientRequest\"\x94\x01\n" +
@@ -1543,7 +1644,7 @@ const file_twopc_proto_rawDesc = "" +
 	"\vTransaction\x18\x02 \x01(\v2\x12.twopc.TransactionR\vTransaction\x126\n" +
 	"\rClientRequest\x18\x03 \x01(\v2\x10.twopc.ClientReqR\rClientRequest\"\x17\n" +
 	"\x03Ack\x12\x10\n" +
-	"\x03Ack\x18\x01 \x01(\bR\x03Ack2\xf1\b\n" +
+	"\x03Ack\x18\x01 \x01(\bR\x03Ack2\xa2\t\n" +
 	"\x05twopc\x126\n" +
 	"\rClientRequest\x12\x10.twopc.ClientReq\x1a\x11.twopc.ClientResp\"\x00\x12B\n" +
 	"\x11ClientReadRequest\x12\x14.twopc.ClientReadReq\x1a\x15.twopc.ClientReadResp\"\x00\x12K\n" +
@@ -1558,7 +1659,8 @@ const file_twopc_proto_rawDesc = "" +
 	"\x12UpdateAvailability\x12\x12.twopc.IsAvailable\x1a\x12.twopc.IsAvailable\x12*\n" +
 	"\aPrintDB\x12\f.twopc.Empty\x1a\x11.twopc.AllBalance\x12)\n" +
 	"\tPrintLogs\x12\f.twopc.Empty\x1a\x0e.twopc.AllLogs\x12/\n" +
-	"\fPrintBalance\x12\x0f.twopc.ClientID\x1a\x0e.twopc.Balance\x12#\n" +
+	"\fPrintBalance\x12\x0f.twopc.ClientID\x1a\x0e.twopc.Balance\x12/\n" +
+	"\tPrintView\x12\f.twopc.Empty\x1a\x14.twopc.PrintNewViews\x12#\n" +
 	"\x05Flush\x12\f.twopc.Empty\x1a\f.twopc.Empty\x12/\n" +
 	"\x10GetCurrentLeader\x12\f.twopc.Empty\x1a\r.twopc.Ballot\x12;\n" +
 	"\x12TwoPCClientRequest\x12\x10.twopc.ClientReq\x1a\x11.twopc.ClientResp\"\x00\x126\n" +
@@ -1583,7 +1685,7 @@ func file_twopc_proto_rawDescGZIP() []byte {
 	return file_twopc_proto_rawDescData
 }
 
-var file_twopc_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_twopc_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_twopc_proto_goTypes = []any{
 	(*Ballot)(nil),                // 0: twopc.Ballot
 	(*Transaction)(nil),           // 1: twopc.Transaction
@@ -1610,18 +1712,20 @@ var file_twopc_proto_goTypes = []any{
 	(*Empty)(nil),                 // 22: twopc.Empty
 	(*ClientReadReq)(nil),         // 23: twopc.ClientReadReq
 	(*ClientReadResp)(nil),        // 24: twopc.ClientReadResp
-	(*TwoPCMessage)(nil),          // 25: twopc.TwoPCMessage
-	(*Prepared)(nil),              // 26: twopc.Prepared
-	(*Ack)(nil),                   // 27: twopc.Ack
-	(*timestamppb.Timestamp)(nil), // 28: google.protobuf.Timestamp
+	(*PrintnewView)(nil),          // 25: twopc.PrintnewView
+	(*PrintNewViews)(nil),         // 26: twopc.PrintNewViews
+	(*TwoPCMessage)(nil),          // 27: twopc.TwoPCMessage
+	(*Prepared)(nil),              // 28: twopc.Prepared
+	(*Ack)(nil),                   // 29: twopc.Ack
+	(*timestamppb.Timestamp)(nil), // 30: google.protobuf.Timestamp
 }
 var file_twopc_proto_depIdxs = []int32{
 	0,  // 0: twopc.AcceptLog.Ballot:type_name -> twopc.Ballot
 	3,  // 1: twopc.AcceptLog.AcceptVal:type_name -> twopc.ClientReq
 	1,  // 2: twopc.ClientReq.Transaction:type_name -> twopc.Transaction
-	28, // 3: twopc.ClientReq.Timestamp:type_name -> google.protobuf.Timestamp
+	30, // 3: twopc.ClientReq.Timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 4: twopc.ClientResp.Ballot:type_name -> twopc.Ballot
-	28, // 5: twopc.ClientResp.Timestamp:type_name -> google.protobuf.Timestamp
+	30, // 5: twopc.ClientResp.Timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 6: twopc.PrepareReq.Ballot:type_name -> twopc.Ballot
 	0,  // 7: twopc.PromiseAck.Ballot:type_name -> twopc.Ballot
 	0,  // 8: twopc.Accept.Ballot:type_name -> twopc.Ballot
@@ -1636,57 +1740,61 @@ var file_twopc_proto_depIdxs = []int32{
 	16, // 17: twopc.AllBalance.Balance:type_name -> twopc.Balance
 	20, // 18: twopc.ClientIDs.ClientID:type_name -> twopc.ClientID
 	0,  // 19: twopc.ClientReadResp.Ballot:type_name -> twopc.Ballot
-	1,  // 20: twopc.TwoPCMessage.Transaction:type_name -> twopc.Transaction
-	3,  // 21: twopc.TwoPCMessage.ClientRequest:type_name -> twopc.ClientReq
-	1,  // 22: twopc.Prepared.Transaction:type_name -> twopc.Transaction
-	3,  // 23: twopc.Prepared.ClientRequest:type_name -> twopc.ClientReq
-	3,  // 24: twopc.twopc.ClientRequest:input_type -> twopc.ClientReq
-	23, // 25: twopc.twopc.ClientReadRequest:input_type -> twopc.ClientReadReq
-	3,  // 26: twopc.twopc.IntershardParticipantClientRequest:input_type -> twopc.ClientReq
-	5,  // 27: twopc.twopc.PrepareRequest:input_type -> twopc.PrepareReq
-	7,  // 28: twopc.twopc.AcceptRequest:input_type -> twopc.Accept
-	7,  // 29: twopc.twopc.TwoPCAcceptRequest:input_type -> twopc.Accept
-	9,  // 30: twopc.twopc.Commit:input_type -> twopc.CommitMessage
-	9,  // 31: twopc.twopc.TwoPCPaxosAbortCommit:input_type -> twopc.CommitMessage
-	10, // 32: twopc.twopc.NewViewRequest:input_type -> twopc.NewViewReq
-	0,  // 33: twopc.twopc.NewViewUpdate:input_type -> twopc.Ballot
-	15, // 34: twopc.twopc.UpdateAvailability:input_type -> twopc.IsAvailable
-	22, // 35: twopc.twopc.PrintDB:input_type -> twopc.Empty
-	22, // 36: twopc.twopc.PrintLogs:input_type -> twopc.Empty
-	20, // 37: twopc.twopc.PrintBalance:input_type -> twopc.ClientID
-	22, // 38: twopc.twopc.Flush:input_type -> twopc.Empty
-	22, // 39: twopc.twopc.GetCurrentLeader:input_type -> twopc.Empty
-	3,  // 40: twopc.twopc.TwoPCClientRequest:input_type -> twopc.ClientReq
-	25, // 41: twopc.twopc.TwoPCPrepare:input_type -> twopc.TwoPCMessage
-	25, // 42: twopc.twopc.TwoPCAbort:input_type -> twopc.TwoPCMessage
-	25, // 43: twopc.twopc.TwoPCCommit:input_type -> twopc.TwoPCMessage
-	25, // 44: twopc.twopc.UpdateClients:input_type -> twopc.TwoPCMessage
-	4,  // 45: twopc.twopc.ClientRequest:output_type -> twopc.ClientResp
-	24, // 46: twopc.twopc.ClientReadRequest:output_type -> twopc.ClientReadResp
-	4,  // 47: twopc.twopc.IntershardParticipantClientRequest:output_type -> twopc.ClientResp
-	6,  // 48: twopc.twopc.PrepareRequest:output_type -> twopc.PromiseAck
-	8,  // 49: twopc.twopc.AcceptRequest:output_type -> twopc.Accepted
-	8,  // 50: twopc.twopc.TwoPCAcceptRequest:output_type -> twopc.Accepted
-	22, // 51: twopc.twopc.Commit:output_type -> twopc.Empty
-	22, // 52: twopc.twopc.TwoPCPaxosAbortCommit:output_type -> twopc.Empty
-	11, // 53: twopc.twopc.NewViewRequest:output_type -> twopc.NewView
-	22, // 54: twopc.twopc.NewViewUpdate:output_type -> twopc.Empty
-	15, // 55: twopc.twopc.UpdateAvailability:output_type -> twopc.IsAvailable
-	17, // 56: twopc.twopc.PrintDB:output_type -> twopc.AllBalance
-	19, // 57: twopc.twopc.PrintLogs:output_type -> twopc.AllLogs
-	16, // 58: twopc.twopc.PrintBalance:output_type -> twopc.Balance
-	22, // 59: twopc.twopc.Flush:output_type -> twopc.Empty
-	0,  // 60: twopc.twopc.GetCurrentLeader:output_type -> twopc.Ballot
-	4,  // 61: twopc.twopc.TwoPCClientRequest:output_type -> twopc.ClientResp
-	26, // 62: twopc.twopc.TwoPCPrepare:output_type -> twopc.Prepared
-	27, // 63: twopc.twopc.TwoPCAbort:output_type -> twopc.Ack
-	27, // 64: twopc.twopc.TwoPCCommit:output_type -> twopc.Ack
-	27, // 65: twopc.twopc.UpdateClients:output_type -> twopc.Ack
-	45, // [45:66] is the sub-list for method output_type
-	24, // [24:45] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	0,  // 20: twopc.PrintnewView.Ballot:type_name -> twopc.Ballot
+	25, // 21: twopc.PrintNewViews.newView:type_name -> twopc.PrintnewView
+	1,  // 22: twopc.TwoPCMessage.Transaction:type_name -> twopc.Transaction
+	3,  // 23: twopc.TwoPCMessage.ClientRequest:type_name -> twopc.ClientReq
+	1,  // 24: twopc.Prepared.Transaction:type_name -> twopc.Transaction
+	3,  // 25: twopc.Prepared.ClientRequest:type_name -> twopc.ClientReq
+	3,  // 26: twopc.twopc.ClientRequest:input_type -> twopc.ClientReq
+	23, // 27: twopc.twopc.ClientReadRequest:input_type -> twopc.ClientReadReq
+	3,  // 28: twopc.twopc.IntershardParticipantClientRequest:input_type -> twopc.ClientReq
+	5,  // 29: twopc.twopc.PrepareRequest:input_type -> twopc.PrepareReq
+	7,  // 30: twopc.twopc.AcceptRequest:input_type -> twopc.Accept
+	7,  // 31: twopc.twopc.TwoPCAcceptRequest:input_type -> twopc.Accept
+	9,  // 32: twopc.twopc.Commit:input_type -> twopc.CommitMessage
+	9,  // 33: twopc.twopc.TwoPCPaxosAbortCommit:input_type -> twopc.CommitMessage
+	10, // 34: twopc.twopc.NewViewRequest:input_type -> twopc.NewViewReq
+	0,  // 35: twopc.twopc.NewViewUpdate:input_type -> twopc.Ballot
+	15, // 36: twopc.twopc.UpdateAvailability:input_type -> twopc.IsAvailable
+	22, // 37: twopc.twopc.PrintDB:input_type -> twopc.Empty
+	22, // 38: twopc.twopc.PrintLogs:input_type -> twopc.Empty
+	20, // 39: twopc.twopc.PrintBalance:input_type -> twopc.ClientID
+	22, // 40: twopc.twopc.PrintView:input_type -> twopc.Empty
+	22, // 41: twopc.twopc.Flush:input_type -> twopc.Empty
+	22, // 42: twopc.twopc.GetCurrentLeader:input_type -> twopc.Empty
+	3,  // 43: twopc.twopc.TwoPCClientRequest:input_type -> twopc.ClientReq
+	27, // 44: twopc.twopc.TwoPCPrepare:input_type -> twopc.TwoPCMessage
+	27, // 45: twopc.twopc.TwoPCAbort:input_type -> twopc.TwoPCMessage
+	27, // 46: twopc.twopc.TwoPCCommit:input_type -> twopc.TwoPCMessage
+	27, // 47: twopc.twopc.UpdateClients:input_type -> twopc.TwoPCMessage
+	4,  // 48: twopc.twopc.ClientRequest:output_type -> twopc.ClientResp
+	24, // 49: twopc.twopc.ClientReadRequest:output_type -> twopc.ClientReadResp
+	4,  // 50: twopc.twopc.IntershardParticipantClientRequest:output_type -> twopc.ClientResp
+	6,  // 51: twopc.twopc.PrepareRequest:output_type -> twopc.PromiseAck
+	8,  // 52: twopc.twopc.AcceptRequest:output_type -> twopc.Accepted
+	8,  // 53: twopc.twopc.TwoPCAcceptRequest:output_type -> twopc.Accepted
+	22, // 54: twopc.twopc.Commit:output_type -> twopc.Empty
+	22, // 55: twopc.twopc.TwoPCPaxosAbortCommit:output_type -> twopc.Empty
+	11, // 56: twopc.twopc.NewViewRequest:output_type -> twopc.NewView
+	22, // 57: twopc.twopc.NewViewUpdate:output_type -> twopc.Empty
+	15, // 58: twopc.twopc.UpdateAvailability:output_type -> twopc.IsAvailable
+	17, // 59: twopc.twopc.PrintDB:output_type -> twopc.AllBalance
+	19, // 60: twopc.twopc.PrintLogs:output_type -> twopc.AllLogs
+	16, // 61: twopc.twopc.PrintBalance:output_type -> twopc.Balance
+	26, // 62: twopc.twopc.PrintView:output_type -> twopc.PrintNewViews
+	22, // 63: twopc.twopc.Flush:output_type -> twopc.Empty
+	0,  // 64: twopc.twopc.GetCurrentLeader:output_type -> twopc.Ballot
+	4,  // 65: twopc.twopc.TwoPCClientRequest:output_type -> twopc.ClientResp
+	28, // 66: twopc.twopc.TwoPCPrepare:output_type -> twopc.Prepared
+	29, // 67: twopc.twopc.TwoPCAbort:output_type -> twopc.Ack
+	29, // 68: twopc.twopc.TwoPCCommit:output_type -> twopc.Ack
+	29, // 69: twopc.twopc.UpdateClients:output_type -> twopc.Ack
+	48, // [48:70] is the sub-list for method output_type
+	26, // [26:48] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_twopc_proto_init() }
@@ -1700,7 +1808,7 @@ func file_twopc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_twopc_proto_rawDesc), len(file_twopc_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   28,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

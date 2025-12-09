@@ -64,13 +64,19 @@ func (s *Server) UpdateView() error {
 		fmt.Println("couldn't perform new view")
 	}
 	log.Println("New view:")
+	acceptlogsforprintview := []string{}
+
 	for seq, view := range newView {
 		log.Println(seq, ":", view)
+		acceptlogsforprintview = append(acceptlogsforprintview, view.String())
 	}
 	s.Mapmu.Lock()
 	currBallot := s.CurrLeaderBallot
 	s.CurrSequenceNumber = max(heighestSequenceNumber, s.CurrSequenceNumber)
 	s.Mapmu.Unlock()
+	if heighestSequenceNumber != 0 {
+		s.PrintNewView[currBallot] = acceptlogsforprintview
+	}
 	for i := 1; i < heighestSequenceNumber+1; i++ {
 		waitTimer := time.NewTimer(50 * time.Millisecond)
 		currseq := newView[i].AcceptSeq

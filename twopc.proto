@@ -124,6 +124,13 @@ message ClientReadResp{
 int32 Balance=1;
 Ballot Ballot=2;
 }
+message PrintnewView{
+Ballot Ballot=1;
+repeated string Logs=2;
+}
+message PrintNewViews{
+repeated PrintnewView newView=1;
+}
 
 service twopc{
 	rpc ClientRequest(ClientReq) returns (ClientResp){};
@@ -146,6 +153,7 @@ service twopc{
 	rpc PrintDB(Empty) returns (AllBalance);
 	rpc PrintLogs(Empty)returns(AllLogs); 
 	rpc PrintBalance(ClientID)returns (Balance);
+	rpc PrintView(Empty)returns(PrintNewViews);
 
 	rpc Flush(Empty)returns(Empty); 
 	rpc GetCurrentLeader(Empty)returns (Ballot);

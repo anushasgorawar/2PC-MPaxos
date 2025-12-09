@@ -55,7 +55,7 @@ func main() {
 	}
 
 	for set := 0; set < len(sets)+1; {
-		fmt.Println("Choose an option:\n1. PrintDB\n2. PrintBalance\n3.PrintPerformance\nDefault: Continue to the next set")
+		fmt.Println("Choose an option:\n1. PrintDB\n2. PrintBalance\n3. PrintView 4. PrintPerformance\nDefault: Continue to the next set")
 
 		var choice int
 		fmt.Print("Enter your choice (1-5):\n")
@@ -78,6 +78,12 @@ func main() {
 				log.Println("Could not PrintStatus", err)
 			}
 		case 3:
+			fmt.Print("PrintView\n")
+			err := PrintView()
+			if err != nil {
+				log.Println("Could not PrintStatus", err)
+			}
+		case 4:
 			fmt.Print("Performace")
 			err := Performance()
 			if err != nil {

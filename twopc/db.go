@@ -25,3 +25,17 @@ func (s *Server) PrintBalance(ctx context.Context, clientID *ClientID) (*Balance
 	}
 	return &Balance{Balance: string(balance)}, nil
 }
+
+func (s *Server) PrintView(ctx context.Context, empty *Empty) (*PrintNewViews, error) {
+	// s.PrintNewView[currBallot] = acceptlogsforprintview
+	finalview := &PrintNewViews{}
+	for ballot, view := range s.PrintNewView {
+		finalview.NewView = append(finalview.NewView, &PrintnewView{
+			Ballot: ballot,
+			Logs:   view,
+		})
+	}
+	log.Println("Printview: ")
+	log.Println(finalview)
+	return finalview, nil
+}
