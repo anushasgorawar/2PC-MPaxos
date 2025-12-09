@@ -96,7 +96,7 @@ func (s *Server) InitialiseClients() {
 	log.Println(s.AllClusters)
 	log.Println(s.GrpcClientMap)
 	// s.ElectionTimerDuration = (2 * time.Second) + (time.Duration(s.Id)*time.Second)*2
-	s.Tp = (1 * time.Second)
+	s.Tp = (500 * time.Millisecond)
 
 	if s.Id == 1 || s.Id == 4 || s.Id == 7 {
 		s.ElectionTimerDuration = 1 * time.Second

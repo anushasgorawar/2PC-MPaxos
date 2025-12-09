@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -34,7 +35,7 @@ var (
 	n                    = 9
 	ClusterLeaders       = []int{0, 1, 4, 7}
 	GrpcClientMap        = make(map[int]twopc.TwopcClient)
-	ClientTimerDuration  = 14 * time.Second
+	ClientTimerDuration  = 10 * time.Second
 	ContextWindowTime    = 10 * time.Second
 	CurrStartTime        time.Time
 	CurrTotalTime        time.Duration
@@ -49,9 +50,9 @@ func main() {
 	InitGRPCMap()
 
 	benchmarkConfig := &BenchmarkConfig{
-		TotalOperations: 1000,
+		TotalOperations: 3000,
 		ReadWriteRatio:  0.5,
-		CrossShardRatio: 0.8,
+		CrossShardRatio: 0.0,
 		Skew:            0,
 	}
 
@@ -72,10 +73,7 @@ func main() {
 	CurrTotalTime = time.Since(CurrStartTime)
 	println()
 	fmt.Print("Performace")
-	err := Performance()
-	if err != nil {
-		return
-	}
+	Performance()
 }
 
 func InitGRPCMap() {
@@ -174,6 +172,7 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 						return
 					}
 					log.Println("BroadcastClientrequest: Could not connect: ", err.Error())
+					resChannel <- struct{}{}
 					return
 				} else {
 					if res != nil && res.Ballot != nil && res.Ballot.ProcessID != 0 {
@@ -234,7 +233,7 @@ func ReadOperation(client string, clusterId int) {
 	}
 }
 
-func Performance() error {
+func Performance() {
 	// throughputandlatency.
 	throughput := float64(CurrTransactionCount) / float64(CurrTotalTime.Seconds())
 	averageLatency := float64(CurrTotalLatency.Milliseconds()) / float64(CurrTransactionCount)
@@ -244,5 +243,5 @@ func Performance() error {
 	fmt.Printf("Throughput: %v transactions/second\n", throughput)
 	fmt.Printf("Average Latency: %v ms\n", averageLatency)
 
-	return nil
+	os.Exit(0)
 }
