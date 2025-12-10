@@ -47,8 +47,8 @@ var (
 func main() {
 	log.Println("Starting client")
 	InitGRPCMap()
-	filePath := "CSE535-F25-Project-3-Testcases.csv"
-	// filePath := "testcases.csv"
+	// filePath := "CSE535-F25-Project-3-Testcases.csv"
+	filePath := "testcases.csv"
 	sets, availablenodes, err := ReadTransactions(filePath)
 	if err != nil {
 		log.Fatal("could not read CSV. Try again")
@@ -90,7 +90,7 @@ func main() {
 				log.Println("Could not PrintStatus", err)
 			}
 		default:
-			if set >= len(sets)+1 {
+			if set >= len(sets) {
 				return
 			}
 			Flush()
@@ -287,6 +287,7 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 						return
 					}
 					log.Println("BroadcastClientrequest: Could not connect: ", err.Error())
+					time.Sleep(clientTimerDuration)
 					return
 				} else {
 					if res != nil && res.Ballot != nil && res.Ballot.ProcessID != 0 {

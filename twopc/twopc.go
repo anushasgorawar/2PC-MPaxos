@@ -139,7 +139,7 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 		//PARTICIPANT PREPARED
 
 		go func() {
-			participantLeaderwaitTimer := time.NewTimer(200 * time.Millisecond)
+			participantLeaderwaitTimer := time.NewTimer(1 * time.Second)
 			LeaderChan := make(chan struct{})
 			for i, grpcclient := range s.AllClusters[clusterId2].GrpcClientMap {
 				grpcC := grpcclient
@@ -148,7 +148,10 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 				go func(grpcC TwopcClient, addr string) {
 					// defer wgbr.Done()
 					log.Printf("Sending TwoPCAcceptRequest to %v", i)
+
+					ctx, closefunc := context.WithTimeout(context.Background(), 3*time.Second)
 					currentLeaderAck, err := grpcC.IsCurrentLeader(ctx, nil)
+					closefunc()
 					if err != nil {
 						log.Printf("IsCurrentLeader error from %v: %v", i, err)
 						return

@@ -50,9 +50,9 @@ Set Number,Transactions,Live Nodes
 ,F(n6),
 ,"(6003, 6004, 1)",
 ,"(6005, 6006, 1)",
-,"(6007, 8, 1)",
+,"(6007, 8, 1)",->should not be there in n3
 ,F(n9),
-,"(6008, 3008, 1)",->should not be there in n9
+,"(6008, 3008, 1)",->should not be there in n,6n9
 ,(6),
 ,(7),
 ,(6008),
@@ -66,10 +66,10 @@ Set Number,Transactions,Live Nodes
 ,(6002), -> read fails as no leader
 8,"(1, 2, 1)","[n1, n2, n3, n4, n5, n6, n7, n8, n9]"
 ,F(n1),
-,"(3, 3001, 1)",
-,"(3002, 3003, 1)",
+,"(3, 3001, 1)", -> shouldnt be there in 1
+,"(3002, 3003, 1)", 
 ,F(n4),
-,"(3004, 6001, 1)",
+,"(3004, 6001, 1)",-> shoudlnt be there in 4
 ,"(6005, 6006, 1)",
 ,F(n7),
 ,(6001),
