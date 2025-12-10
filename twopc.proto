@@ -170,8 +170,19 @@ service twopc{
 	rpc UpdateClients(TwoPCMessage) returns (Ack){};
 
 	rpc IsCurrentLeader(Empty) returns (CurrentLeaderAck){};
-}
 
+	//Sharding
+	rpc Reshard(Records)returns(Empty);
+
+}
+message Record {
+	string client   =1;  
+	int32 oldCluster=2;
+	int32 newcluster=3;
+}
+message Records {
+	repeated Record Records=1;
+}
 message CurrentLeaderAck{
 	bool IsCurrentLeader=1;
 	int32 Id=2;

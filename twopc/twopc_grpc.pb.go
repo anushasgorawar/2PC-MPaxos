@@ -42,6 +42,7 @@ const (
 	Twopc_TwoPCCommit_FullMethodName                        = "/twopc.twopc/TwoPCCommit"
 	Twopc_UpdateClients_FullMethodName                      = "/twopc.twopc/UpdateClients"
 	Twopc_IsCurrentLeader_FullMethodName                    = "/twopc.twopc/IsCurrentLeader"
+	Twopc_Reshard_FullMethodName                            = "/twopc.twopc/Reshard"
 )
 
 // TwopcClient is the client API for Twopc service.
@@ -75,6 +76,8 @@ type TwopcClient interface {
 	TwoPCCommit(ctx context.Context, in *TwoPCMessage, opts ...grpc.CallOption) (*Ack, error)
 	UpdateClients(ctx context.Context, in *TwoPCMessage, opts ...grpc.CallOption) (*Ack, error)
 	IsCurrentLeader(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CurrentLeaderAck, error)
+	// Sharding
+	Reshard(ctx context.Context, in *Records, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type twopcClient struct {
@@ -315,6 +318,16 @@ func (c *twopcClient) IsCurrentLeader(ctx context.Context, in *Empty, opts ...gr
 	return out, nil
 }
 
+func (c *twopcClient) Reshard(ctx context.Context, in *Records, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, Twopc_Reshard_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TwopcServer is the server API for Twopc service.
 // All implementations must embed UnimplementedTwopcServer
 // for forward compatibility.
@@ -346,6 +359,8 @@ type TwopcServer interface {
 	TwoPCCommit(context.Context, *TwoPCMessage) (*Ack, error)
 	UpdateClients(context.Context, *TwoPCMessage) (*Ack, error)
 	IsCurrentLeader(context.Context, *Empty) (*CurrentLeaderAck, error)
+	// Sharding
+	Reshard(context.Context, *Records) (*Empty, error)
 	mustEmbedUnimplementedTwopcServer()
 }
 
@@ -424,6 +439,9 @@ func (UnimplementedTwopcServer) UpdateClients(context.Context, *TwoPCMessage) (*
 }
 func (UnimplementedTwopcServer) IsCurrentLeader(context.Context, *Empty) (*CurrentLeaderAck, error) {
 	return nil, status.Error(codes.Unimplemented, "method IsCurrentLeader not implemented")
+}
+func (UnimplementedTwopcServer) Reshard(context.Context, *Records) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method Reshard not implemented")
 }
 func (UnimplementedTwopcServer) mustEmbedUnimplementedTwopcServer() {}
 func (UnimplementedTwopcServer) testEmbeddedByValue()               {}
@@ -860,6 +878,24 @@ func _Twopc_IsCurrentLeader_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Twopc_Reshard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Records)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TwopcServer).Reshard(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Twopc_Reshard_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TwopcServer).Reshard(ctx, req.(*Records))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Twopc_ServiceDesc is the grpc.ServiceDesc for Twopc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -958,6 +994,10 @@ var Twopc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IsCurrentLeader",
 			Handler:    _Twopc_IsCurrentLeader_Handler,
+		},
+		{
+			MethodName: "Reshard",
+			Handler:    _Twopc_Reshard_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

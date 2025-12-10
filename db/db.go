@@ -198,3 +198,31 @@ func (ds *Datastore) Flush() error {
 
 	return nil
 }
+
+func (ds *Datastore) Reshard(newClients, oldClients []string) error {
+	log.Println("Resharding in Datastore..")
+	err := ds.BoltDB.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(ds.Server))
+		if bucket == nil {
+			return fmt.Errorf("bucket %s not found", ds.Server)
+		}
+		for _, c := range oldClients {
+			if err := bucket.Delete([]byte(c)); err != nil {
+				return err
+			}
+		}
+		for _, c := range newClients {
+			if err := bucket.Put([]byte(c), []byte("10")); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	ds.Clients = newClients
+	log.Println("Done Resharding in Datastore..")
+	return nil
+}
