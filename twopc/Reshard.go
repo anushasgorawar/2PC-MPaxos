@@ -15,10 +15,10 @@ func (s *Server) Reshard(ctx context.Context, records *Records) (*Empty, error) 
 	AddtoThisCluster := []string{}
 	RemoveFromThisCluster := []string{}
 	for _, record := range records.Records {
-		if record.Newcluster == int32(s.Id) {
+		if record.Newcluster == int32(s.ClusterID) {
 			AddtoThisCluster = append(AddtoThisCluster, record.Client)
 		}
-		if record.OldCluster == int32(s.Id) {
+		if record.OldCluster == int32(s.ClusterID) {
 			RemoveFromThisCluster = append(RemoveFromThisCluster, record.Client)
 		}
 	}

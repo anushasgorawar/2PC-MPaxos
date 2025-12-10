@@ -60,7 +60,7 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 				}, nil
 			default:
 				log.Println("request still in progress")
-				return nil, errors.New("request still in progress")
+				return nil, errors.New("InProgress: request still in progress")
 			}
 		}
 		//1. check locks
@@ -115,6 +115,7 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 		coordinatorclustersuccess := make(chan bool, 1)
 		participantclustersuccess := make(chan bool, 1)
 		LockError := false
+		InProgress := false
 		Abort := false
 		// var wg sync.WaitGroup
 		waitTimer := time.NewTimer(7 * time.Second)
@@ -128,6 +129,11 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 					log.Printf("LockError: Transaction %v failed, Should Retry..", twoPCMessage.Transaction)
 					// BroadcastClientrequest(clusterId, message.Client, message)
 					LockError = true
+				}
+				if strings.Contains(err.Error(), "LockError") {
+					log.Printf("LockError: Transaction %v failed, Should Retry..", twoPCMessage.Transaction)
+					// BroadcastClientrequest(clusterId, message.Client, message)
+					InProgress = true
 				}
 				log.Println(err)
 				coordinatorclustersuccess <- false
@@ -149,7 +155,7 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 				// wgbr.Add(1)
 				go func(grpcC TwopcClient, addr string) {
 					// defer wgbr.Done()
-					log.Printf("Sending TwoPCAcceptRequest to %v", i)
+					log.Printf("Fetching Leader of participant cluster %v", i)
 
 					ctx, closefunc := context.WithTimeout(context.Background(), 3*time.Second)
 					currentLeaderAck, err := grpcC.IsCurrentLeader(ctx, nil)
@@ -166,6 +172,7 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 						s.AllClusters[clusterId2] = cluster
 						s.Mapmu.Unlock()
 					} else {
+						log.Println("No stable leader in participant. Need to abort.")
 						return
 					}
 				}(grpcC, addr)
@@ -195,6 +202,11 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 					log.Printf("LockError: Transaction %v failed, Should Retry..", twoPCMessage.Transaction)
 					// BroadcastClientrequest(clusterId, message.Client, message)
 					LockError = true
+
+				} else if strings.Contains(err.Error(), "InProgress") {
+					log.Printf("InProgress: Transaction %v InProgress, Should Retry..", twoPCMessage.Transaction)
+					// BroadcastClientrequest(clusterId, message.Client, message)
+					InProgress = true
 
 				} else {
 					Abort = true
@@ -246,6 +258,9 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 				if Abort {
 					returnerr = errors.New("Abort")
 				}
+				if InProgress {
+					returnerr = errors.New("InProgress")
+				}
 				if err != nil {
 					return &ClientResp{
 						Ballot: &Ballot{
@@ -270,6 +285,9 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 				}
 				if Abort {
 					returnerr = errors.New("Abort")
+				}
+				if InProgress {
+					returnerr = errors.New("InProgress")
 				}
 				if err != nil {
 					return &ClientResp{
@@ -313,7 +331,7 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 					return resp, err
 				}
 			case <-waitTimer.C:
-				
+
 				go s.TwoPCAbort(ctx, twoPCMessage)
 				go s.SendAbort(clusterId2, twoPCMessage)
 				log.Println("2PC Prepare timer ran out.")

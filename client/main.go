@@ -122,7 +122,7 @@ func main() {
 					time.Sleep(2 * time.Second)
 					FailNode(t[0].Reciever, resChannel)
 				case "R":
-					time.Sleep(2 * time.Second)
+					// time.Sleep(2 * time.Second)
 					RecoverNode(t[0].Reciever, resChannel)
 				default:
 					time.Sleep(2 * time.Second)
@@ -134,6 +134,7 @@ func main() {
 			}
 			// wg.Wait()
 			CurrTotalTime = time.Since(CurrStartTime)
+			// Performance()
 			println()
 		}
 
@@ -207,7 +208,7 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 	for _, transaction := range transactions {
 		wg.Add(1)
 		t := transaction
-		CurrTransactionCount++
+		// CurrTransactionCount++
 		go func(t *twopc.Transaction) {
 			defer wg.Done()
 			// client, _ := strconv.Atoi(t.Sender)
@@ -250,8 +251,8 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 				}
 				if strings.Contains(err.Error(), "request still in progress") {
 					log.Printf("Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", t)
-					time.Sleep(200 * time.Millisecond)
 				}
+				time.Sleep(ClientTimerDuration)
 				BroadcastClientrequest(clusterId, message.Client, message)
 				return
 			}
@@ -290,13 +291,19 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 					}
 					if strings.Contains(err.Error(), "LockError") {
 						log.Printf("BroadcastClientrequest: LockError: Transaction %v failed, Retrying..", request.Transaction)
+						time.Sleep(clientTimerDuration)
+						return
+					}
+					if strings.Contains(err.Error(), "inProgress") {
+						log.Printf("BroadcastClientrequest: inProgress: Transaction %v inProgress, Retrying..", request.Transaction)
+						resChannel <- struct{}{}
 						return
 					}
 					if strings.Contains(err.Error(), "DeadlineExceeded") {
 						log.Printf("Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", request.Transaction)
 						return
 					}
-					log.Println("BroadcastClientrequest: Could not connect: ", err.Error())
+					log.Println("BroadcastClientrequest: ", err.Error())
 					time.Sleep(clientTimerDuration)
 					return
 				} else {
@@ -347,11 +354,15 @@ func ReadOperation(client string, clusterId int) {
 						log.Printf("BroadcastReadrequest: LockError: Transaction %v failed, Retrying..", readreq.Client)
 						return
 					}
+					if strings.Contains(err.Error(), "InProgress") {
+						log.Printf("BroadcastReadrequest: InProgress: Transaction %v InProgress, Retrying..", readreq.Client)
+						return
+					}
 					if strings.Contains(err.Error(), "DeadlineExceeded") {
 						log.Printf("BroadcastReadrequest: Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", readreq.Client)
 						return
 					}
-					log.Println("BroadcastReadrequest: Could not connect: ", err.Error())
+					log.Println("BroadcastReadrequest:  ", err.Error())
 					return
 				} else {
 					if res != nil && res.Ballot != nil && res.Ballot.ProcessID != 0 {

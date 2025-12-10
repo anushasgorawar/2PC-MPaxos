@@ -50,10 +50,10 @@ func main() {
 	InitGRPCMap()
 
 	benchmarkConfig := &BenchmarkConfig{
-		TotalOperations: 30000,
+		TotalOperations: 2000,
 		ReadWriteRatio:  0.5,
-		CrossShardRatio: 0.1,
-		Skew:            0.1,
+		CrossShardRatio: 0.5,
+		Skew:            0.5,
 	}
 
 	CreateShardMap()
@@ -130,6 +130,7 @@ func RunTransactions(transactions []*twopc.Transaction, result chan struct{}) er
 				}
 				if strings.Contains(err.Error(), "DeadlineExceeded") {
 					log.Printf("Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", t)
+					time.Sleep(1 * time.Second)
 					BroadcastClientrequest(clusterId, message.Client, message)
 					return
 				}
@@ -152,7 +153,7 @@ func RunTransactions(transactions []*twopc.Transaction, result chan struct{}) er
 }
 
 func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientReq) {
-	fmt.Println("Broadcasting transaction")
+	// fmt.Println("Broadcasting transaction")
 	clientTimerDuration := 2 * time.Second
 	for {
 		resChannel := make(chan struct{}, 1)
@@ -169,6 +170,11 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 					if strings.Contains(err.Error(), "LockError") {
 						log.Printf("BroadcastClientrequest: LockError: Transaction %v failed, Retrying..", request.Transaction)
 						time.Sleep(1 * time.Second)
+						return
+					}
+					if strings.Contains(err.Error(), "inProgress") {
+						log.Printf("BroadcastClientrequest: inProgress: Transaction %v inProgress, Retrying..", request.Transaction)
+						resChannel <- struct{}{}
 						return
 					}
 					resChannel <- struct{}{}

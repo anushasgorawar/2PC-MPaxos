@@ -133,7 +133,7 @@ func (s *Server) TwoPCPrepare(ctx context.Context, twoPCMessage *TwoPCMessage) (
 			return &Prepared{Prepared: false}, nil
 		default:
 			log.Println("request still in progress")
-			// return nil, errors.New("request still in progress")
+			return &Prepared{Prepared: false}, errors.New("inProgress: request still in progress")
 		}
 	}
 	dataitem := twoPCMessage.Transaction.Reciever

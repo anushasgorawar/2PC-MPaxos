@@ -208,7 +208,9 @@ func (ds *Datastore) Flush() error {
 }
 
 func (ds *Datastore) Reshard(newClients, oldClients []string) error {
-	log.Println("Resharding in Datastore..")
+	log.Println("Resharding in Datastore..") //https://piazza.com/class/mcdq920rdwc2k3/post/365 balance 10
+	log.Println("Adding:", newClients)
+	log.Println("Removing:", oldClients)
 	err := ds.BoltDB.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(ds.Server))
 		if bucket == nil {
