@@ -43,6 +43,7 @@ var (
 	CurrTotalLatency     time.Duration
 	MetricsMu            sync.Mutex
 	ShardMap             map[string]int
+	Set                  int
 )
 
 func main() {
@@ -58,13 +59,12 @@ func main() {
 	}
 
 	accounts := []string{}
-	for set := 0; set < len(sets)+1; {
-		fmt.Println("Choose an option:\n1. PrintDB\n2. PrintBalance\n3. PrintView \n4. PrintPerformance\n5. PrintAllDB\n6. PrintReshard \nDefault: Continue to the next set")
+	for Set = -1; Set < len(sets)+1; {
+		fmt.Println("Choose an option:\n1. PrintDB\n2. PrintBalance\n3. PrintView \n4. PrintPerformance\n5. PrintAllDB\n6. PrintReshard \nDefault: Continue to the next Set")
 
 		var choice int
 		fmt.Print("Enter your choice (1-5):\n")
 		fmt.Scanln(&choice)
-		// id := -1
 		balanceclient := ""
 		switch choice {
 		case 1:
@@ -92,31 +92,31 @@ func main() {
 				log.Println("Could not PrintStatus", err)
 			}
 		case 5:
-			fmt.Print("Performace")
-			fmt.Print("Enter n: ")
+			fmt.Print("Enter node number: ")
 			var id int
 			fmt.Scanln(&id)
 			PrintAllDB(GrpcClientMap[id])
 		case 6:
 			fmt.Print("PrintView\n")
-			PrintReshard()
+			PrintReshard(sets[Set])
 		default:
-			if set >= len(sets) {
+			Set++
+			if Set >= len(sets) {
 				return
 			}
 			Flush()
-			updateAvailability(availablenodes[set])
-			fmt.Println("set's avaialble nodes: ", availablenodes[set])
-			log.Println("Transactions: ", sets[set])
-			accounts = GetUniqueAccounts(sets[set])
-			i := len(sets[set])
+			updateAvailability(availablenodes[Set])
+			fmt.Println("Set's avaialble nodes: ", availablenodes[Set])
+			log.Println("Transactions: ", sets[Set])
+			accounts = GetUniqueAccounts(sets[Set])
+			i := len(sets[Set])
 			// var wg sync.WaitGroup
 			CurrStartTime = time.Now()
 			for j := 0; j < i; j++ {
 				resChannel := make(chan struct{})
-				// for _, transaction := range sets[set][j] {
+				// for _, transaction := range sets[Set][j] {
 				// wg.Add(1)
-				t := sets[set][j]
+				t := sets[Set][j]
 				switch t[0].Sender {
 				case "F":
 					time.Sleep(2 * time.Second)
@@ -126,7 +126,7 @@ func main() {
 					RecoverNode(t[0].Reciever, resChannel)
 				default:
 					time.Sleep(2 * time.Second)
-					go RunTransactions(sets[set][j], resChannel)
+					go RunTransactions(sets[Set][j], resChannel)
 					// <-resChannel
 				}
 				// time.Sleep(1 * time.Second)
@@ -135,7 +135,6 @@ func main() {
 			// wg.Wait()
 			CurrTotalTime = time.Since(CurrStartTime)
 			println()
-			set++
 		}
 
 	}

@@ -1,14 +1,43 @@
 package main
 
 import (
-	"sort"
-	"strconv"
+	"fmt"
+	"log"
+
+	twopc "github.com/F25-CSE535/2pc-anushasgorawar/twopc"
+	"github.com/yourbasic/graph"
 )
 
-func PrintReshard() {
-	// transactions
-	//
-	//	newshard := Reshard(transactions, ShardMap, 3)
+func GetCurrTransactions(sets [][]*twopc.Transaction) []*twopc.Transaction {
+	transactions := []*twopc.Transaction{}
+	for _, i := range sets {
+		for _, j := range i {
+			if j.Amount != 0 {
+				transactions = append(transactions, j)
+			}
+		}
+	}
+	return transactions
+}
+func ComputeMoves(oldMap, newMap map[string]int) []string {
+	moves := []string{}
+	for id, oldC := range oldMap {
+		newC := newMap[id]
+		if oldC != newC {
+			moves = append(moves, fmt.Sprintf("(%s, c%d, c%d)", id, oldC, newC))
+		}
+	}
+	return moves
+}
+func PrintReshard(sets [][]*twopc.Transaction) {
+	log.Println("Resharding")
+	currTransactions := GetCurrTransactions(sets)
+	log.Println("Previous Set Transactions: ")
+	log.Println(currTransactions)
+
+	newshards := Reshard(currTransactions, ShardMap, 3)
+	moves := ComputeMoves(ShardMap, newshards)
+	fmt.Println(moves)
 }
 
 // Transaction structure assumed:
@@ -17,58 +46,66 @@ type Transaction struct {
 	Reciever string
 	Amount   int
 }
+func Reshard(transactions []*twopc.Transaction, oldMap map[string]int, numClusters int) map[string]int {
 
-func Reshard(transactions []*Transaction, oldMap map[int]int, numClusters int) map[int]int {
-	// 1. Compute weight of each item based on frequency in transactions
-	weights := make(map[int]int)
+	// 1. String ID → index mapping
+	idToIndex := make(map[string]int)
+	indexToId := make([]string, 0)
 
+	makeIndex := func(id string) int {
+		if idx, ok := idToIndex[id]; ok {
+			return idx
+		}
+		idx := len(indexToId)
+		idToIndex[id] = idx
+		indexToId = append(indexToId, id)
+		return idx
+	}
+
+	// Build mapping only for IDs in transactions
 	for _, t := range transactions {
-		if t.Reciever == "" {
-			id, _ := strconv.Atoi(t.Sender)
-			weights[id]++
+		makeIndex(t.Sender)
+		makeIndex(t.Reciever)
+	}
+
+	// ❗ FIX: graph only uses actual number of used IDs
+	g := graph.New(len(indexToId))
+
+	// 2. Add edges only among IDs that appear in transactions
+	for _, t := range transactions {
+		s := idToIndex[t.Sender]
+		r := idToIndex[t.Reciever]
+		g.AddBoth(s, r)
+	}
+
+	// 3. Connected components
+	components := graph.Components(g)
+
+	newMap := make(map[string]int)
+	clusterID := 1
+
+	for _, comp := range components {
+		if len(comp) == 0 {
 			continue
 		}
 
-		s, _ := strconv.Atoi(t.Sender)
-		r, _ := strconv.Atoi(t.Reciever)
-		weights[s]++
-		weights[r]++
-	}
-
-	// 2. Create a list of items
-	type item struct {
-		id     int
-		weight int
-	}
-
-	items := make([]item, 0, 9000)
-	for id := 1; id <= 9000; id++ {
-		items = append(items, item{id: id, weight: weights[id]})
-	}
-
-	// 3. Sort by weight DESC (hot items placed first)
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].weight > items[j].weight
-	})
-
-	// 4. Prepare cluster load counters
-	clusterLoad := make([]int, numClusters+1) // 1-indexed: clusterLoad[1], clusterLoad[2], clusterLoad[3]
-	newMap := make(map[int]int)
-
-	// 5. Assign each item to the least-loaded cluster
-	for _, it := range items {
-		bestCluster := 1
-		minLoad := clusterLoad[1]
-
-		for c := 2; c <= numClusters; c++ {
-			if clusterLoad[c] < minLoad {
-				minLoad = clusterLoad[c]
-				bestCluster = c
-			}
+		// Assign entire connected component to same cluster
+		for _, idx := range comp {
+			id := indexToId[idx]  
+			newMap[id] = clusterID
 		}
 
-		newMap[it.id] = bestCluster
-		clusterLoad[bestCluster]++
+		clusterID++
+		if clusterID > numClusters {
+			clusterID = 1
+		}
+	}
+
+	// 4. IDs never appearing in any transaction → keep old placement
+	for id, oldC := range oldMap {
+		if _, seen := newMap[id]; !seen {
+			newMap[id] = oldC
+		}
 	}
 
 	return newMap
