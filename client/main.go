@@ -42,11 +42,13 @@ var (
 	CurrTransactionCount int
 	CurrTotalLatency     time.Duration
 	MetricsMu            sync.Mutex
+	ShardMap             map[string]int
 )
 
 func main() {
 	log.Println("Starting client")
 	InitGRPCMap()
+	CreateShardMap()
 	// filePath := "CSE535-F25-Project-3-Testcases.csv"
 	filePath := "testcases.csv"
 	sets, availablenodes, err := ReadTransactions(filePath)
@@ -57,7 +59,7 @@ func main() {
 
 	accounts := []string{}
 	for set := 0; set < len(sets)+1; {
-		fmt.Println("Choose an option:\n1. PrintDB\n2. PrintBalance\n3. PrintView 4. PrintPerformance\nDefault: Continue to the next set")
+		fmt.Println("Choose an option:\n1. PrintDB\n2. PrintBalance\n3. PrintView \n4. PrintPerformance\n5. PrintAllDB\n6. PrintReshard \nDefault: Continue to the next set")
 
 		var choice int
 		fmt.Print("Enter your choice (1-5):\n")
@@ -89,6 +91,15 @@ func main() {
 			if err != nil {
 				log.Println("Could not PrintStatus", err)
 			}
+		case 5:
+			fmt.Print("Performace")
+			fmt.Print("Enter n: ")
+			var id int
+			fmt.Scanln(&id)
+			PrintAllDB(GrpcClientMap[id])
+		case 6:
+			fmt.Print("PrintView\n")
+			PrintReshard()
 		default:
 			if set >= len(sets) {
 				return
@@ -200,8 +211,8 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 		CurrTransactionCount++
 		go func(t *twopc.Transaction) {
 			defer wg.Done()
-			client, _ := strconv.Atoi(t.Sender)
-			clusterId := GetClusterID(client)
+			// client, _ := strconv.Atoi(t.Sender)
+			clusterId := GetClusterID(t.Sender)
 			if t.Reciever == "" && t.Amount == 0 {
 				ReadOperation(t.Sender, clusterId)
 				return

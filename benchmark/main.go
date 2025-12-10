@@ -41,6 +41,7 @@ var (
 	CurrTotalTime        time.Duration
 	CurrTransactionCount int
 	CurrTotalLatency     time.Duration
+	CurrTransactionSet   []*twopc.Transaction
 	MetricsMu            sync.Mutex
 	wg                   sync.WaitGroup
 )

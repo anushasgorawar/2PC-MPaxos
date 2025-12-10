@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 	"time"
 
@@ -26,8 +25,8 @@ func PrintDB(accounts []string) error {
 }
 
 func PrintBalance(client string) error {
-	clientid, _ := strconv.Atoi(client)
-	clusterid := GetClusterID(clientid)
+	// clientid, _ := strconv.Atoi(client)
+	clusterid := GetClusterID(client)
 	var wg sync.WaitGroup
 	fmt.Println("Account: ", client)
 	for _, n := range Clusters[clusterid] {
@@ -77,4 +76,15 @@ func PrintView() error {
 		wg.Wait()
 	}
 	return nil
+}
+
+func PrintAllDB(client twopc.TwopcClient) {
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
+	balances, _ := client.PrintDB(ctx, nil)
+	cancelFunc()
+	fmt.Println("Printing the current datastore..")
+	for _, balance := range balances.Balance {
+		fmt.Println(balance.Balance)
+	}
+	return
 }

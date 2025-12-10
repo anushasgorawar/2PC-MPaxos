@@ -34,6 +34,8 @@ type Server struct {
 	Clients          []string
 
 	LockTable sync.Map
+	ShardMap  map[string]int
+	Shardmu   sync.RWMutex
 
 	HighestBallotSeen   *Ballot
 	CurrSequenceNumber  int
@@ -412,6 +414,7 @@ func (s *Server) IsCurrentLeader(ctx context.Context, empty *Empty) (*CurrentLea
 
 func (s *Server) Flush(ctx context.Context, empty *Empty) (*Empty, error) {
 	log.Println("Cleaning data.")
+	s.Clients = s.CreateClients()
 	err := s.Datastore.Flush()
 	if err != nil {
 		log.Println(err)

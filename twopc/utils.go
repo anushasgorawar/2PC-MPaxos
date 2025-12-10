@@ -2,10 +2,13 @@ package twopc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -25,38 +28,69 @@ func (s *Server) AssignClusterID() int {
 	}
 }
 
+// func (s *Server) FindClusterId(client string) int {
+// 	c, err := strconv.Atoi(client)
+// 	if err != nil {
+// 		log.Println("could not convert client to int", client)
+// 		return 0
+// 	}
+// 	switch (c - 1) / 3000 {
+// 	case 0:
+// 		return 1
+// 	case 1:
+// 		return 2
+// 	default:
+// 		return 3
+// 	}
+// }
+
 func (s *Server) FindClusterId(client string) int {
-	c, err := strconv.Atoi(client)
-	if err != nil {
-		log.Println("could not convert client to int", client)
-		return 0
-	}
-	switch (c - 1) / 3000 {
-	case 0:
-		return 1
-	case 1:
-		return 2
-	default:
-		return 3
-	}
+	s.Shardmu.RLock()
+	id := s.ShardMap[client]
+	s.Shardmu.RUnlock()
+	return id
 }
 
+//	func (s *Server) CreateClients() []string {
+//		clients := []string{}
+//		switch s.ClusterID {
+//		case 1:
+//			for i := 1; i <= 3000; i++ {
+//				clients = append(clients, strconv.Itoa(i))
+//			}
+//		case 2:
+//			for i := 3001; i <= 6000; i++ {
+//				clients = append(clients, strconv.Itoa(i))
+//			}
+//		case 3:
+//			for i := 6001; i <= 9000; i++ {
+//				clients = append(clients, strconv.Itoa(i))
+//			}
+//		}
+//		return clients
+//	}
 func (s *Server) CreateClients() []string {
 	clients := []string{}
-	switch s.ClusterID {
-	case 1:
-		for i := 1; i <= 3000; i++ {
-			clients = append(clients, strconv.Itoa(i))
-		}
-	case 2:
-		for i := 3001; i <= 6000; i++ {
-			clients = append(clients, strconv.Itoa(i))
-		}
-	case 3:
-		for i := 6001; i <= 9000; i++ {
-			clients = append(clients, strconv.Itoa(i))
+	data, err := os.ReadFile("records.json")
+	if err != nil {
+		log.Printf("CreateClients: could not read records.json: %v\n", err)
+		return clients
+	}
+	var shardMap map[string]int
+	if err := json.Unmarshal(data, &shardMap); err != nil {
+		log.Printf("CreateClients: could not unmarshal records.json: %v\n", err)
+		return clients
+	}
+	for idStr, clusterID := range shardMap {
+		if clusterID == s.ClusterID {
+			clients = append(clients, idStr)
 		}
 	}
+	s.Shardmu.RLock()
+	s.ShardMap = shardMap
+	s.Shardmu.RUnlock()
+
+	sort.Strings(clients)
 	return clients
 }
 
