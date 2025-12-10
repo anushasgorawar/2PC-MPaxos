@@ -108,19 +108,17 @@ func (s *Server) TwoPCPrepare(ctx context.Context, twoPCMessage *TwoPCMessage) (
 
 	log.Println("TwoPCPrepare: Processing TwoPCPrepare: ", twoPCMessage.ClientRequest)
 	clientReq := twoPCMessage.ClientRequest
-
+	if !s.IsAvailable {
+		return nil, s.IsNotAvailable()
+	}
 	if !s.IsLeader {
 		if s.CurrLeaderBallot.ProcessID != 0 && s.CurrLeaderBallot.ProcessID != int32(s.Id) {
 			log.Printf("node %v is not the leader. Redirecting to node %v", s.Id, s.CurrLeaderBallot.ProcessID)
 			ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 			return s.GrpcClientMap[Nodes[int(s.CurrLeaderBallot.ProcessID)]].TwoPCPrepare(ctx, twoPCMessage)
-
 		} else {
-			return nil, fmt.Errorf("node %v is not aware of the new leader", s.Id)
+			return nil, fmt.Errorf("LeaderUnknown: node %v is not aware of the new leader", s.Id)
 		}
-	}
-	if !s.IsAvailable {
-		return nil, s.IsNotAvailable()
 	}
 	if s.LatestTransaction == nil {
 		s.LatestTransaction = clientReq.Timestamp
@@ -376,16 +374,6 @@ func (s *Server) TwoPCAbort(ctx context.Context, twoPCMessage *TwoPCMessage) (*A
 	if !s.IsAvailable {
 		return nil, s.IsNotAvailable()
 	}
-	if !s.IsLeader {
-		if s.CurrLeaderBallot.ProcessID != 0 && s.CurrLeaderBallot.ProcessID != int32(s.Id) {
-			log.Printf("node %v is not the leader. Redirecting to node %v", s.Id, s.CurrLeaderBallot.ProcessID)
-			ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
-			return s.GrpcClientMap[Nodes[int(s.CurrLeaderBallot.ProcessID)]].TwoPCAbort(ctx, twoPCMessage)
-
-		} else {
-			return nil, fmt.Errorf("node %v is not aware of the new leader", s.Id)
-		}
-	}
 	if s.LatestTransaction == nil {
 		s.LatestTransaction = clientReq.Timestamp
 	}
@@ -411,9 +399,9 @@ func (s *Server) TwoPCAbort(ctx context.Context, twoPCMessage *TwoPCMessage) (*A
 	if err != nil {
 		log.Println("updating logs failed:", err)
 	}
-
-	log.Printf("updated log for acceptrequest")
-	log.Println("Sending Accepts: ")
+	fmt.Println("acceptlog: ", acceptlog)
+	log.Printf("updated log for aborted acceptrequest")
+	log.Println("Sending abort Accepts: ")
 	majorityAccepted := make(chan struct{}, 1)
 	go s.TwoPCSendAcceptsWithTransaction(acceptMsg, majorityAccepted)
 	var dataitem string
@@ -475,13 +463,13 @@ func (s *Server) TwoPCSendAbortCommit(currseq int, twoPCMessage *TwoPCMessage) {
 }
 
 func (s *Server) TwoPCPaxosAbortCommit(ctx context.Context, commitMessage *CommitMessage) (*Empty, error) {
+	log.Printf("Recieved TwoPCPaxosAbortCommit for %v", commitMessage.ClientReq.Transaction)
 	if !s.IsAvailable {
 		return nil, s.IsNotAvailable()
 	}
-	currStatus, ok := s.StatusMap.Load(int(commitMessage.SequenceNumber))
-	if ok && (currStatus == "Executed" || currStatus == "Committed") {
-		return nil, nil
-	}
+	var err error
+	// currStatus, ok := s.StatusMap.Load(int(commitMessage.SequenceNumber))
+
 	log.Printf("%v \"A\" committed.", commitMessage.SequenceNumber)
 	s.StatusMap.Store(int(commitMessage.SequenceNumber), "Committed")
 	var dataitem string
@@ -490,10 +478,11 @@ func (s *Server) TwoPCPaxosAbortCommit(ctx context.Context, commitMessage *Commi
 	} else {
 		dataitem = commitMessage.ClientReq.Transaction.Reciever
 	}
-	err := s.RevertTwoPCExecution(dataitem)
+	err = s.RevertTwoPCExecution(dataitem)
 	fmt.Println("Reverted Transaction: ", commitMessage.ClientReq.Transaction)
 	s.StatusMap.Store(int(commitMessage.SequenceNumber), "Executed")
 	s.LockTable.Delete(dataitem)
+
 	//fIXME: update the datastore.
 	return nil, err
 }
@@ -598,7 +587,7 @@ func (s *Server) TwoPCAcceptRequest(ctx context.Context, acceptMsg *Accept) (*Ac
 			//check if log already exists
 			s.TimestampSequence.Store(acceptMsg.ClientReq.Timestamp.AsTime().UnixNano(), int(acceptMsg.SequenceNumber))
 			log.Printf("updating log for acceptrequest")
-			s.StatusMap.Store(int(acceptMsg.SequenceNumber), "Accepted")
+			// s.StatusMap.Store(int(acceptMsg.SequenceNumber), "Accepted")
 
 			s.Mapmu.Lock()
 			s.CurrSequenceNumber = max(int(acceptMsg.SequenceNumber), s.CurrSequenceNumber)
@@ -606,7 +595,7 @@ func (s *Server) TwoPCAcceptRequest(ctx context.Context, acceptMsg *Accept) (*Ac
 			acceptlog := StringBuilder(acceptMsg)
 			fmt.Println("acceptlog: ", acceptlog)
 			s.Datastore.UpdateLog([]byte(strconv.Itoa(int(acceptMsg.SequenceNumber))), []byte(acceptlog))
-			log.Printf("updated log for acceptrequest")
+			log.Printf("updated Aborted log for acceptrequest")
 			return &Accepted{
 				Ballot:         acceptMsg.Ballot,
 				SequenceNumber: acceptMsg.SequenceNumber,

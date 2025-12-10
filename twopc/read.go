@@ -19,6 +19,7 @@ func (s *Server) ClientReadRequest(ctx context.Context, clientReadReq *ClientRea
 			ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 			return s.GrpcClientMap[Nodes[int(s.CurrLeaderBallot.ProcessID)]].ClientReadRequest(ctx, clientReadReq)
 		} else {
+			
 			return nil, errors.New("node is not aware of the leader")
 		}
 	} else {

@@ -168,7 +168,15 @@ service twopc{
 	rpc TwoPCCommit(TwoPCMessage) returns (Ack){};
 
 	rpc UpdateClients(TwoPCMessage) returns (Ack){};
+
+	rpc IsCurrentLeader(Empty) returns (CurrentLeaderAck){};
 }
+
+message CurrentLeaderAck{
+	bool IsCurrentLeader=1;
+	int32 Id=2;
+}
+
 message TwoPCMessage{
 	Transaction Transaction=1;
 	ClientReq ClientRequest=2;

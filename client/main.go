@@ -228,6 +228,10 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 			// log.Println(res)
 			log.Println(err)
 			if err != nil {
+				if strings.Contains(err.Error(), "Abort") {
+					log.Printf("Response: %v for transaction %v", res.Success, t)
+					return
+				}
 				if strings.Contains(err.Error(), "LockError") {
 					log.Printf("LockError: Transaction %v failed, Retrying..", t)
 				}
@@ -270,6 +274,10 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 				res, err := GrpcClientMap[node].TwoPCClientRequest(ctx, request)
 				cancelFunc()
 				if err != nil {
+					if strings.Contains(err.Error(), "Abort") {
+						log.Printf("Response: %v for transaction %v", res.Success, request.Client)
+						resChannel <- struct{}{}
+					}
 					if strings.Contains(err.Error(), "LockError") {
 						log.Printf("BroadcastClientrequest: LockError: Transaction %v failed, Retrying..", request.Transaction)
 						return
@@ -325,14 +333,14 @@ func ReadOperation(client string, clusterId int) {
 				cancelFunc()
 				if err != nil {
 					if strings.Contains(err.Error(), "LockError") {
-						log.Printf("BroadcastClientrequest: LockError: Transaction %v failed, Retrying..", readreq.Client)
+						log.Printf("BroadcastReadrequest: LockError: Transaction %v failed, Retrying..", readreq.Client)
 						return
 					}
 					if strings.Contains(err.Error(), "DeadlineExceeded") {
-						log.Printf("Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", readreq.Client)
+						log.Printf("BroadcastReadrequest: Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", readreq.Client)
 						return
 					}
-					log.Println("BroadcastClientrequest: Could not connect: ", err.Error())
+					log.Println("BroadcastReadrequest: Could not connect: ", err.Error())
 					return
 				} else {
 					if res != nil && res.Ballot != nil && res.Ballot.ProcessID != 0 {

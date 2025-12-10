@@ -4,11 +4,11 @@ Set Number,Transactions,Live Nodes
 ,"(6001, 6002, 1)",
 ,(1002),
 ,(3002),
-2,"(1001, 1002, 1)","[n1, n2, n4, n5, n7, n8]" ->n3 should be 0
-,"(1003, 1004, 1)", ->n3 should be 0
+2,"(1001, 1002, 1)","[n1, n2, n4, n5, n7, n8]" ->n3 should be 10
+,"(1003, 1004, 1)", ->n3 should be 10
 ,F(n2),
 ,"(1005, 1006, 1)",->should fail, retry
-,"(3001, 3002, 1)",->n6 should be 0
+,"(3001, 3002, 1)",->n6 should be 10
 ,F(n5),
 ,"(3003, 3004, 1)",->should fail, retry
 ,(3004),
@@ -58,12 +58,12 @@ Set Number,Transactions,Live Nodes
 ,(6008),
 7,"(3001, 3002, 1)","[n1, n2, n3, n4, n5, n7, n8]"->should not be there in n6
 ,F(n4),
-,"(3, 3003, 1)", -> should abort
+,"(3, 3003, 1)", -> should abort, no consensus in participant
 ,"(4, 6001, 1)",should not be there in n9
 ,F(n7),
-,"(5, 6002, 1)",-> should abort
+,"(5, 6002, 1)",-> should abort, no consensus in participant
 ,(4),
-,(6002),
+,(6002), -> read fails as no leader
 8,"(1, 2, 1)","[n1, n2, n3, n4, n5, n6, n7, n8, n9]"
 ,F(n1),
 ,"(3, 3001, 1)",

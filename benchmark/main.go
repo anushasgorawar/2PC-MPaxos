@@ -121,6 +121,10 @@ func RunTransactions(transactions []*twopc.Transaction, result chan struct{}) er
 			cancelFunc()
 
 			if err != nil {
+				if strings.Contains(err.Error(), "Abort") {
+					log.Printf("Response: %v for transaction %v", false, t)
+					return
+				}
 				if strings.Contains(err.Error(), "LockError") {
 					log.Printf("LockError: Transaction %v failed, Retrying..", t)
 					BroadcastClientrequest(clusterId, message.Client, message)

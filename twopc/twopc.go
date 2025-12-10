@@ -31,7 +31,36 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 				ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 				return s.GrpcClientMap[Nodes[int(s.CurrLeaderBallot.ProcessID)]].TwoPCClientRequest(ctx, clientReq)
 			} else {
-				return nil, fmt.Errorf("node %v is not aware of the new leader", s.Id)
+				return nil, fmt.Errorf("UnknownLeader: node %v is not aware of the new leader", s.Id)
+			}
+		}
+
+		val, ok := s.TimestampStatus.Load(clientReq.Timestamp.AsTime().UnixNano())
+		if ok {
+			switch val {
+			case "Success":
+				return &ClientResp{
+					Ballot: &Ballot{
+						SequenceNumber: s.CurrLeaderBallot.SequenceNumber,
+						ProcessID:      int32(s.Id),
+					},
+					Timestamp: clientReq.Timestamp,
+					Client:    clientReq.Client,
+					Success:   true,
+				}, nil
+			case "Failure":
+				return &ClientResp{
+					Ballot: &Ballot{
+						SequenceNumber: s.CurrLeaderBallot.SequenceNumber,
+						ProcessID:      int32(s.Id),
+					},
+					Timestamp: clientReq.Timestamp,
+					Client:    clientReq.Client,
+					Success:   false,
+				}, nil
+			default:
+				log.Println("request still in progress")
+				return nil, errors.New("request still in progress")
 			}
 		}
 		//1. check locks
@@ -82,16 +111,17 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 			Transaction:   clientReq.Transaction,
 			ClientRequest: clientReq,
 		}
-		participantClusterLeaderId := s.AllClusters[clusterId2].Leader
+
 		coordinatorclustersuccess := make(chan bool, 1)
 		participantclustersuccess := make(chan bool, 1)
 		LockError := false
+		Abort := false
 		// var wg sync.WaitGroup
 		waitTimer := time.NewTimer(7 * time.Second)
 		// wg.Add(2)
 
+		//COORDINATE PREPARED
 		go func() {
-			// defer wg.Done()
 			coordinatorClusterResponse, err := s.TwoPCCoordinatorPrepare(twoPCMessage)
 			if err != nil {
 				if strings.Contains(err.Error(), "LockError") {
@@ -105,16 +135,59 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 				coordinatorclustersuccess <- coordinatorClusterResponse.Prepared
 			}
 		}()
+
+		//PARTICIPANT PREPARED
+
 		go func() {
-			// defer wg.Done()
+			participantLeaderwaitTimer := time.NewTimer(200 * time.Millisecond)
+			LeaderChan := make(chan struct{})
+			for i, grpcclient := range s.AllClusters[clusterId2].GrpcClientMap {
+				grpcC := grpcclient
+				addr := i
+				// wgbr.Add(1)
+				go func(grpcC TwopcClient, addr string) {
+					// defer wgbr.Done()
+					log.Printf("Sending TwoPCAcceptRequest to %v", i)
+					currentLeaderAck, err := grpcC.IsCurrentLeader(ctx, nil)
+					if err != nil {
+						log.Printf("IsCurrentLeader error from %v: %v", i, err)
+						return
+					}
+					if currentLeaderAck.IsCurrentLeader {
+						LeaderChan <- struct{}{}
+						cluster := s.AllClusters[clusterId2]
+						cluster.Leader = int(currentLeaderAck.Id)
+						s.AllClusters[clusterId2] = cluster
+					} else {
+						return
+					}
+				}(grpcC, addr)
+			}
+		WAIT:
+			for {
+				select {
+				case <-LeaderChan:
+					break WAIT
+				case <-participantLeaderwaitTimer.C:
+					Abort = true
+					participantclustersuccess <- false
+					return
+				}
+			}
 			ctx, closefunc := context.WithTimeout(context.Background(), 3*time.Second)
+			participantClusterLeaderId := s.AllClusters[clusterId2].Leader
+			log.Println("Leader of participant cluster is: ", participantClusterLeaderId)
 			participantClusterResponse, err := s.AllClusters[clusterId2].GrpcClientMap[Nodes[participantClusterLeaderId]].TwoPCPrepare(ctx, twoPCMessage)
 			closefunc()
+
 			if err != nil {
 				if strings.Contains(err.Error(), "LockError") {
 					log.Printf("LockError: Transaction %v failed, Should Retry..", twoPCMessage.Transaction)
 					// BroadcastClientrequest(clusterId, message.Client, message)
 					LockError = true
+
+				} else {
+					Abort = true
 				}
 				log.Println(err)
 				participantclustersuccess <- false
@@ -160,6 +233,9 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 				if LockError {
 					returnerr = errors.New("LockError")
 				}
+				if Abort {
+					returnerr = errors.New("Abort")
+				}
 				if err != nil {
 					return &ClientResp{
 						Ballot: &Ballot{
@@ -181,6 +257,9 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 				var returnerr error
 				if LockError {
 					returnerr = errors.New("LockError")
+				}
+				if Abort {
+					returnerr = errors.New("Abort")
 				}
 				if err != nil {
 					return &ClientResp{
@@ -326,7 +405,7 @@ func (s *Server) HandlePrepared(clusterid2 int, twoPCMessage *TwoPCMessage) erro
 }
 
 func (s *Server) SendAbort(clusterid int, twoPCMessage *TwoPCMessage) error {
-	// handle abort here
+	log.Println("Aborted. Sending abort to participantcluster Leader")
 	for {
 		participantClusterLeaderId := s.AllClusters[clusterid].Leader
 		ctx, closefunc := context.WithTimeout(context.Background(), 3*time.Second)

@@ -398,13 +398,16 @@ func (s *Server) KillLeader(ctx context.Context, empty *Empty) (*Empty, error) {
 			}
 		}
 	}
-	// s.IsLeader = false
+	s.IsLeader = false
 	log.Printf("node %v is down", s.Id)
 	return nil, nil
 }
 
-func (s *Server) GetCurrentLeader(ctx context.Context, empty *Empty) (*Ballot, error) {
-	return s.CurrLeaderBallot, nil
+func (s *Server) IsCurrentLeader(ctx context.Context, empty *Empty) (*CurrentLeaderAck, error) {
+	return &CurrentLeaderAck{
+		IsCurrentLeader: s.IsLeader,
+		Id:              int32(s.Id),
+	}, nil
 }
 
 func (s *Server) Flush(ctx context.Context, empty *Empty) (*Empty, error) {
