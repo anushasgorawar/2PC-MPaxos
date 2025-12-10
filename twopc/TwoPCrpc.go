@@ -99,7 +99,7 @@ func (s *Server) TwoPCCoordinatorPrepare(twoPCMessage *TwoPCMessage) (*Prepared,
 	case <-waitTimer.C:
 		log.Printf("TwoPCCoordinatorPrepare: Consensus on Accept not reached")
 		s.LockTable.Delete(dataitem)
-		return &Prepared{Prepared: true}, nil
+		return &Prepared{Prepared: false}, nil
 	}
 }
 

@@ -94,6 +94,7 @@ func (s *Server) InitialiseClients() {
 	s.AllClusters = make(map[int]Cluster)
 	s.CreateClusterGRPCMap()
 	log.Println("After creating cluster map")
+
 	log.Println(s.AllClusters)
 	log.Println(s.GrpcClientMap)
 	// s.ElectionTimerDuration = (2 * time.Second) + (time.Duration(s.Id)*time.Second)*2

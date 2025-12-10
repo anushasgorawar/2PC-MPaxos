@@ -5,6 +5,8 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "Running script from: $SCRIPT_DIR"
 
+go run ./CreateRecords
+
 # Move to that directory (optional, if you want commands to run from here)
 cd "$SCRIPT_DIR" || exit
 # List of commands you want to run in separate terminals

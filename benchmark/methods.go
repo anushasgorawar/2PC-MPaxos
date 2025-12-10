@@ -22,19 +22,6 @@ type BenchmarkResult struct {
 	Throughput           float64
 }
 
-func getShard(id int) int {
-	switch {
-	case id >= 1 && id <= 3000:
-		return 1
-	case id >= 3001 && id <= 6000:
-		return 2
-	case id >= 6001 && id <= 9000:
-		return 3
-	default:
-		return -1
-	}
-}
-
 func randUniform(min, max int) int {
 	return rand.Intn(max-min+1) + min
 }
@@ -50,6 +37,7 @@ func randSkewed(min, max int) int {
 	}
 	return randUniform(min, max)
 }
+
 func pickIDWithSkew(skew float64) int {
 	if skew < 0 {
 		skew = 0
@@ -94,13 +82,13 @@ func CreateWorkload(total int, readWriteRatio, crossShardRatio, skew float64) []
 	// 2. Intra-shard read-write (Sender and Receiver must be in the same shard)
 	for i := 0; i < numIntraShard; i++ {
 		s := pickIDWithSkew(skew)
-		shardS := getShard(s)
+		shardS := GetClusterID(strconv.Itoa(s))
 
 		// Pick receiver uniformly inside SAME shard → always terminates
 		var r int
 		for {
 			r = randUniform(1, 9000)
-			if getShard(r) == shardS && r != s {
+			if GetClusterID(strconv.Itoa(r)) == shardS && r != s {
 				break
 			}
 		}
@@ -116,13 +104,13 @@ func CreateWorkload(total int, readWriteRatio, crossShardRatio, skew float64) []
 	// 3. Cross-shard read-write (Sender and Receiver must be in DIFFERENT shards)
 	for i := 0; i < numCrossShard; i++ {
 		s := pickIDWithSkew(skew)
-		shardS := getShard(s)
+		shardS := GetClusterID(strconv.Itoa(s))
 
 		// Pick receiver uniformly from ANY shard EXCEPT shardS → always terminates
 		var r int
 		for {
 			r = randUniform(1, 9000)
-			if getShard(r) != shardS {
+			if GetClusterID(strconv.Itoa(r)) != shardS {
 				break
 			}
 		}

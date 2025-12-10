@@ -137,11 +137,13 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 		}()
 
 		//PARTICIPANT PREPARED
-
+		s.Mapmu.RLock()
+		clientmap := s.AllClusters[clusterId2].GrpcClientMap
+		s.Mapmu.RUnlock()
 		go func() {
 			participantLeaderwaitTimer := time.NewTimer(1 * time.Second)
 			LeaderChan := make(chan struct{})
-			for i, grpcclient := range s.AllClusters[clusterId2].GrpcClientMap {
+			for i, grpcclient := range clientmap {
 				grpcC := grpcclient
 				addr := i
 				// wgbr.Add(1)
@@ -158,9 +160,11 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 					}
 					if currentLeaderAck.IsCurrentLeader {
 						LeaderChan <- struct{}{}
+						s.Mapmu.Lock()
 						cluster := s.AllClusters[clusterId2]
 						cluster.Leader = int(currentLeaderAck.Id)
 						s.AllClusters[clusterId2] = cluster
+						s.Mapmu.Unlock()
 					} else {
 						return
 					}
@@ -178,9 +182,12 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 				}
 			}
 			ctx, closefunc := context.WithTimeout(context.Background(), 3*time.Second)
+			s.Mapmu.RLock()
 			participantClusterLeaderId := s.AllClusters[clusterId2].Leader
+			leaderGRPC := s.AllClusters[clusterId2].GrpcClientMap[Nodes[participantClusterLeaderId]]
+			s.Mapmu.RUnlock()
 			log.Println("Leader of participant cluster is: ", participantClusterLeaderId)
-			participantClusterResponse, err := s.AllClusters[clusterId2].GrpcClientMap[Nodes[participantClusterLeaderId]].TwoPCPrepare(ctx, twoPCMessage)
+			participantClusterResponse, err := leaderGRPC.TwoPCPrepare(ctx, twoPCMessage)
 			closefunc()
 
 			if err != nil {
@@ -306,6 +313,7 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 					return resp, err
 				}
 			case <-waitTimer.C:
+				
 				go s.TwoPCAbort(ctx, twoPCMessage)
 				go s.SendAbort(clusterId2, twoPCMessage)
 				log.Println("2PC Prepare timer ran out.")
@@ -367,10 +375,12 @@ func (s *Server) HandlePrepared(clusterid2 int, twoPCMessage *TwoPCMessage) erro
 		acknowledgementCount := 0
 		TwoPCCommitwaitTimer := time.NewTimer(3 * time.Second)
 		go func() {
+			s.Mapmu.RLock()
 			participantClusterLeaderId := s.AllClusters[clusterid2].Leader
-
+			leaderGRPC := s.AllClusters[clusterid2].GrpcClientMap[Nodes[participantClusterLeaderId]]
+			s.Mapmu.RUnlock()
 			ctx, closefunc := context.WithTimeout(context.Background(), 3*time.Second)
-			_, err := s.AllClusters[clusterid2].GrpcClientMap[Nodes[participantClusterLeaderId]].TwoPCCommit(ctx, twoPCMessage)
+			_, err := leaderGRPC.TwoPCCommit(ctx, twoPCMessage)
 			closefunc()
 			if err != nil {
 				log.Println(err)
@@ -409,14 +419,18 @@ func (s *Server) HandlePrepared(clusterid2 int, twoPCMessage *TwoPCMessage) erro
 
 func (s *Server) SendAbort(clusterid int, twoPCMessage *TwoPCMessage) error {
 	log.Println("Aborted. Sending abort to participantcluster Leader")
-	for {
-		participantClusterLeaderId := s.AllClusters[clusterid].Leader
+	s.Mapmu.Lock()
+	participantClusterLeaderId := s.AllClusters[clusterid].Leader
+	leaderGRPC := s.AllClusters[clusterid].GrpcClientMap[Nodes[participantClusterLeaderId]]
+	s.Mapmu.Unlock()
+	for i := 0; i < 3; i++ {
 		ctx, closefunc := context.WithTimeout(context.Background(), 3*time.Second)
-		_, err := s.AllClusters[clusterid].GrpcClientMap[Nodes[participantClusterLeaderId]].TwoPCAbort(ctx, twoPCMessage)
+		_, err := leaderGRPC.TwoPCAbort(ctx, twoPCMessage)
 		closefunc()
 		if err == nil {
 			return nil
 		}
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 	}
+	return nil
 }

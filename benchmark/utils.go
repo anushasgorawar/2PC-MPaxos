@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -8,16 +11,21 @@ import (
 	"golang.org/x/net/context"
 )
 
-func GetClusterID(client int) int {
-	switch (client - 1) / 3000 {
-	case 0:
-		return 1
-	case 1:
-		return 2
-	default:
-		return 3
-	}
+// func GetClusterID(client int) int {
+// 	switch (client - 1) / 3000 {
+// 	case 0:
+// 		return 1
+// 	case 1:
+// 		return 2
+// 	default:
+// 		return 3
+// 	}
 
+// }
+
+func GetClusterID(client string) int {
+	id := ShardMap[client]
+	return id
 }
 
 func Flush() {
@@ -41,4 +49,18 @@ func Flush() {
 	CurrTotalLatency = 0
 	CurrTransactionCount = 0
 	time.Sleep(1 * time.Second)
+}
+
+func CreateShardMap() {
+	data, err := os.ReadFile("records.json")
+	if err != nil {
+		log.Fatalf("CreateShardMap: could not read records.json: %v", err)
+	}
+
+	m := make(map[string]int)
+	if err := json.Unmarshal(data, &m); err != nil {
+		log.Fatalf("CreateShardMap: could not unmarshal JSON: %v", err)
+	}
+
+	ShardMap = m
 }

@@ -101,17 +101,25 @@ func (ds *Datastore) InitialiseClients() (err error) {
 	return nil
 }
 
-func (ds *Datastore) GetValue(key string, bucket string) ([]byte, error) {
+func (ds *Datastore) GetValue(key string, bucketName string) ([]byte, error) {
 	var res []byte
 	err := ds.BoltDB.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucket))
-		res = bucket.Get([]byte(key))
-		return nil //return of this anon func
+		b := tx.Bucket([]byte(bucketName))
+		if b == nil {
+			return fmt.Errorf("bucket %s not found", bucketName)
+		}
+		v := b.Get([]byte(key))
+		if v == nil {
+			return nil
+		}
+		res = append([]byte(nil), v...)
+		return nil
 	})
-	if err == nil {
-		return res, nil
+
+	if err != nil {
+		return nil, err
 	}
-	return nil, err
+	return res, nil
 }
 
 func (ds *Datastore) PrintDB() ([]string, error) {

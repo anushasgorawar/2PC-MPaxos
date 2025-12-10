@@ -45,7 +45,7 @@ type Server struct {
 	LastPrepareReceived time.Time
 	Tp                  time.Duration
 
-	Mapmu                 sync.Mutex
+	Mapmu                 sync.RWMutex
 	Balmu                 sync.Mutex
 	StatusMap             sync.Map //currseq, status
 	TimestampStatus       sync.Map //timestamp, status

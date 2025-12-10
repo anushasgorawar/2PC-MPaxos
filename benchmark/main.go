@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,6 +42,7 @@ var (
 	CurrTransactionSet   []*twopc.Transaction
 	MetricsMu            sync.Mutex
 	wg                   sync.WaitGroup
+	ShardMap             map[string]int
 )
 
 func main() {
@@ -51,16 +50,13 @@ func main() {
 	InitGRPCMap()
 
 	benchmarkConfig := &BenchmarkConfig{
-		TotalOperations: 1000,
+		TotalOperations: 30000,
 		ReadWriteRatio:  0.5,
-		CrossShardRatio: 0.5,
+		CrossShardRatio: 0.1,
 		Skew:            0.1,
 	}
 
-	Clients := make([]string, 9000)
-	for i := 1; i <= 9000; i++ {
-		Clients[i-1] = strconv.Itoa(i)
-	}
+	CreateShardMap()
 	//total int, readWriteRatio, crossShardRatio, skew float64
 	log.Println("Creating workload")
 	transactions := CreateWorkload(benchmarkConfig.TotalOperations, benchmarkConfig.ReadWriteRatio, benchmarkConfig.CrossShardRatio, benchmarkConfig.Skew)
@@ -100,8 +96,8 @@ func RunTransactions(transactions []*twopc.Transaction, result chan struct{}) er
 		t := transaction
 		go func(t *twopc.Transaction) {
 			defer wg.Done()
-			client, _ := strconv.Atoi(t.Sender)
-			clusterId := GetClusterID(client)
+			// client, _ := strconv.Atoi(t.Sender)
+			clusterId := GetClusterID(t.Sender)
 			if t.Reciever == "" && t.Amount == 0 {
 				ReadOperation(t.Sender, clusterId) //106
 				return
@@ -129,7 +125,7 @@ func RunTransactions(transactions []*twopc.Transaction, result chan struct{}) er
 				if strings.Contains(err.Error(), "LockError") {
 					log.Printf("LockError: Transaction %v failed, Retrying..", t)
 					BroadcastClientrequest(clusterId, message.Client, message)
-					time.Sleep(ClientTimerDuration)
+					time.Sleep(1 * time.Second)
 					return
 				}
 				if strings.Contains(err.Error(), "DeadlineExceeded") {
@@ -172,14 +168,9 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 				if err != nil {
 					if strings.Contains(err.Error(), "LockError") {
 						log.Printf("BroadcastClientrequest: LockError: Transaction %v failed, Retrying..", request.Transaction)
+						time.Sleep(1 * time.Second)
 						return
 					}
-					if strings.Contains(err.Error(), "DeadlineExceeded") {
-						log.Printf("Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", request.Transaction)
-						resChannel <- struct{}{}
-						return
-					}
-					log.Println("BroadcastClientrequest: Could not connect: ", err.Error())
 					resChannel <- struct{}{}
 					return
 				} else {
@@ -199,7 +190,7 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 		case <-clientTimer.C:
 			fmt.Println("Client Request Timeout.")
 			fmt.Printf("Retrying: No Response from server for client %v\n", client)
-			// clientTimerDuration
+			continue
 		}
 	}
 }
@@ -251,5 +242,5 @@ func Performance() {
 	fmt.Printf("Throughput: %v transactions/second\n", throughput)
 	fmt.Printf("Average Latency: %v ms\n", averageLatency)
 
-	os.Exit(0)
+	// os.Exit(0)
 }
