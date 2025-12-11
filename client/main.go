@@ -50,8 +50,8 @@ func main() {
 	log.Println("Starting client")
 	InitGRPCMap()
 	CreateShardMap()
-	filePath := "CSE535-F25-Project-3-Testcases.csv"
-	// filePath := "testcases.csv"
+	// filePath := "CSE535-F25-Project-3-Testcases.csv"
+	filePath := "testcases.csv"
 	sets, availablenodes, err := ReadTransactions(filePath)
 	if err != nil {
 		log.Fatal("could not read CSV. Try again")
