@@ -52,7 +52,7 @@ Set Number,Transactions,Live Nodes
 ,"(6005, 6006, 1)",
 ,"(6007, 8, 1)",->should not be there in n3
 ,F(n9),
-,"(6008, 3008, 1)",->should not be there in n,6n9
+,"(6008, 3008, 1)",->should not be there in n6,n9
 ,(6),
 ,(7),
 ,(6008),

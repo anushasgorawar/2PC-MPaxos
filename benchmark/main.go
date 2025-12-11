@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -33,8 +34,8 @@ var (
 	n                    = 9
 	ClusterLeaders       = []int{0, 1, 4, 7}
 	GrpcClientMap        = make(map[int]twopc.TwopcClient)
-	ClientTimerDuration  = 10 * time.Second
-	ContextWindowTime    = 10 * time.Second
+	ClientTimerDuration  = 5 * time.Second
+	ContextWindowTime    = 5 * time.Second
 	CurrStartTime        time.Time
 	CurrTotalTime        time.Duration
 	CurrTransactionCount int
@@ -49,11 +50,11 @@ func main() {
 	log.Println("Starting client")
 	InitGRPCMap()
 
-	benchmarkConfig := &BenchmarkConfig{
+	benchmarkConfig := &BenchmarkConfig{ //works best when crossshard ratio is 0.2,skew 0.1,readwrite ratio 0.5
 		TotalOperations: 30000,
 		ReadWriteRatio:  0.5,
-		CrossShardRatio: 0.5,
-		Skew:            0.5,
+		CrossShardRatio: 0.2,
+		Skew:            0.1,
 	}
 
 	CreateShardMap()
@@ -134,7 +135,8 @@ func RunTransactions(transactions []*twopc.Transaction, result chan struct{}) er
 					BroadcastClientrequest(clusterId, message.Client, message, false)
 					return
 				}
-				log.Println("RunTransactions: Could not connect: ", err.Error())
+				// log.Println("RunTransactions: ", err.Error())
+				log.Printf("Response: false for transaction %v", t)
 				return
 			}
 
@@ -154,10 +156,9 @@ func RunTransactions(transactions []*twopc.Transaction, result chan struct{}) er
 
 func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientReq, islockerror bool) {
 	// fmt.Println("Broadcasting transaction")
-	clientTimerDuration := 2 * time.Second
 	for i := 0; i < 3; i++ {
 		resChannel := make(chan struct{}, 1)
-		clientTimer := time.NewTimer(clientTimerDuration)
+		clientTimer := time.NewTimer(ClientTimerDuration)
 		for _, nodeClient := range Clusters[clusterId] {
 			if islockerror {
 				if nodeClient != ClusterLeaders[clusterId] {
@@ -174,11 +175,14 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 				if err != nil {
 					if strings.Contains(err.Error(), "LockError") {
 						log.Printf("BroadcastClientrequest: LockError: Transaction %v failed, Retrying..", request.Transaction)
-						time.Sleep(1 * time.Second)
+						time.Sleep(time.Duration(rand.Intn(3000)+1000) * time.Millisecond)
+						if i == 2 {
+							fmt.Println("Retries exhausted.")
+						}
 						return
 					}
 					if strings.Contains(err.Error(), "inProgress") {
-						log.Printf("BroadcastClientrequest: inProgress: Transaction %v inProgress, Retrying..", request.Transaction)
+						log.Printf("BroadcastClientrequest: inProgress: Transaction %v inProgress", request.Transaction)
 						resChannel <- struct{}{}
 						return
 					}
@@ -203,8 +207,8 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 				fmt.Println("Retries exhausted.")
 				continue
 			}
-			fmt.Println("Client Request Timeout.")
-			fmt.Printf("Retrying: No Response from server for client %v\n", client)
+			// fmt.Println("Client Request Timeout.")
+			fmt.Printf("Retrying: Client Request Timeout. %v\n", client)
 			continue
 		}
 	}
@@ -228,7 +232,7 @@ func ReadOperation(client string, clusterId int) {
 		return
 	}
 
-	for {
+	for i := 0; i < 3; i++ {
 		ctx, cancelFunc := context.WithTimeout(context.Background(), ContextWindowTime)
 		res, err := GrpcClientMap[ClusterLeaders[clusterId]].ClientReadRequest(ctx, readreq)
 		cancelFunc()

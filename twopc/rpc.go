@@ -310,7 +310,7 @@ func (s *Server) Commit(ctx context.Context, commitMessage *CommitMessage) (*Emp
 	if ok && (currStatus == "Executed" || currStatus == "Committed") {
 		return nil, nil
 	}
-	log.Printf("%v committed.", currseq)
+	// log.Printf("%v committed.", currseq)
 	s.StatusMap.Store(currseq, "Committed")
 
 	err := s.TwoPCExecution(commitMessage.ClientReq.Transaction, currseq)
@@ -320,7 +320,6 @@ func (s *Server) Commit(ctx context.Context, commitMessage *CommitMessage) (*Emp
 	//fIXME: update the datastore.
 	return nil, err
 }
-
 
 func (s *Server) UpdateAvailability(ctx context.Context, node *IsAvailable) (*IsAvailable, error) {
 	if !node.Up {
@@ -361,6 +360,13 @@ func (s *Server) IsCurrentLeader(ctx context.Context, empty *Empty) (*CurrentLea
 
 func (s *Server) Flush(ctx context.Context, empty *Empty) (*Empty, error) {
 	log.Println("Cleaning data.")
+	if s.Id == 1 || s.Id == 4 || s.Id == 7 {
+		s.ElectionTimerDuration = 1 * time.Second
+		s.ElectionTimer.Reset(1 * time.Second)
+	} else {
+		s.ElectionTimerDuration = s.NextElectionTimeout()
+		s.ElectionTimer.Reset(s.ElectionTimerDuration)
+	}
 	s.Clients = s.CreateClients()
 	err := s.Datastore.Flush()
 	if err != nil {
@@ -392,13 +398,7 @@ func (s *Server) Flush(ctx context.Context, empty *Empty) (*Empty, error) {
 	for k := range s.PrintNewView {
 		delete(s.PrintNewView, k)
 	}
-	if s.Id == 1 || s.Id == 4 || s.Id == 7 {
-		s.ElectionTimerDuration = 1 * time.Second
-		s.ElectionTimer.Reset(1 * time.Second)
-	} else {
-		s.ElectionTimerDuration = s.NextElectionTimeout()
-		s.ElectionTimer.Reset(s.ElectionTimerDuration)
-	}
+
 	// s.WAL = map[*Transaction]map[string]int{}
 	log.Println("Flushed")
 	return nil, nil

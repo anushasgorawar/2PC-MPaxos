@@ -121,6 +121,7 @@ func main() {
 				case "F":
 					time.Sleep(2 * time.Second)
 					FailNode(t[0].Reciever, resChannel)
+					time.Sleep(2 * time.Second)
 				case "R":
 					// time.Sleep(2 * time.Second)
 					RecoverNode(t[0].Reciever, resChannel)
@@ -228,7 +229,7 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 				Timestamp:   transactionts,
 				Client:      t.Sender,
 			}
-			ctx, _ := context.WithTimeout(context.Background(), ClientTimerDuration)
+			ctx, _ := context.WithTimeout(context.Background(), ContextWindowTime)
 			start := time.Now()
 			res, err := GrpcClientMap[ClusterLeaders[clusterId]].TwoPCClientRequest(ctx, message)
 			latency := time.Since(start)
@@ -238,7 +239,7 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 			MetricsMu.Unlock()
 			// cancelFunc()
 			// log.Println(res)
-			log.Println(err)
+			// log.Println(err)
 			if err != nil {
 				if strings.Contains(err.Error(), "Abort") {
 					log.Printf("Response: %v for transaction %v", res.Success, t)
@@ -252,6 +253,7 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 				}
 				if strings.Contains(err.Error(), "request still in progress") {
 					log.Printf("Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", t)
+					return
 				}
 				time.Sleep(ClientTimerDuration)
 				BroadcastClientrequest(clusterId, message.Client, message)
@@ -273,7 +275,7 @@ func RunTransactions(transactions []*twopc.Transaction, resChannel chan struct{}
 }
 
 func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientReq) {
-	// twoloops := 2
+	BoradcastTimer := 2 * time.Second
 	for {
 		fmt.Println("Broadcasting transaction:", request.Transaction)
 		resChannel := make(chan struct{}, 1)
@@ -292,7 +294,7 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 					}
 					if strings.Contains(err.Error(), "LockError") {
 						log.Printf("BroadcastClientrequest: LockError: Transaction %v failed, Retrying..", request.Transaction)
-						time.Sleep(clientTimerDuration)
+						time.Sleep(BoradcastTimer)
 						return
 					}
 					if strings.Contains(err.Error(), "inProgress") {
@@ -305,7 +307,7 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 						return
 					}
 					log.Println("BroadcastClientrequest: ", err.Error())
-					time.Sleep(clientTimerDuration)
+					time.Sleep(BoradcastTimer)
 					return
 				} else {
 					if res != nil && res.Ballot != nil && res.Ballot.ProcessID != 0 {

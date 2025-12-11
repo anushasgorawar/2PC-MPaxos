@@ -200,7 +200,7 @@ func (s *Server) SendAcceptsWithTransaction(acceptMsg *Accept, majorityAccepted 
 		}
 		wg.Wait()
 		log.Printf("Post for loop of sendacceptwithtransaction")
-		waitTimer := time.NewTimer(2 * time.Second)
+		waitTimer := time.NewTimer(3 * time.Second)
 		acceptedMessagesCount := 1
 	WAIT:
 		for {

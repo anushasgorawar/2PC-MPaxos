@@ -44,6 +44,7 @@ func CreateShardMap() {
 func Flush() {
 	log.Println("FLUSHING")
 	updateAvailability([]int{1, 2, 3, 4, 5, 6, 7, 8, 9})
+	ClusterLeaders = []int{0, 1, 4, 7}
 	var wg sync.WaitGroup
 	for _, client := range GrpcClientMap {
 		wg.Add(1)
@@ -58,12 +59,11 @@ func Flush() {
 			}
 
 		}(c)
-		wg.Wait()
 	}
+	wg.Wait()
 	CurrTotalTime = 0
 	CurrTotalLatency = 0
 	CurrTransactionCount = 0
-	ClusterLeaders = []int{0, 1, 4, 7}
 	time.Sleep(2 * time.Second)
 	log.Println("FLUSHED")
 }

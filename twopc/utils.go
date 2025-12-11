@@ -197,10 +197,8 @@ func StringBuilder(acceptMsg *Accept) string {
 func (s *Server) NextElectionTimeout() time.Duration {
 	// random base between (Id * 2s) and (Id * 2s + 1s)
 	min := 2 * time.Second
-	max := 5 * time.Second
+	delta := 2 * time.Second
 
-	// random duration between min and max
-	delta := max - min
 	return min + time.Duration(rand.Int63n(int64(delta)))
 }
 
