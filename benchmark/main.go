@@ -50,7 +50,7 @@ func main() {
 	InitGRPCMap()
 
 	benchmarkConfig := &BenchmarkConfig{
-		TotalOperations: 2000,
+		TotalOperations: 30000,
 		ReadWriteRatio:  0.5,
 		CrossShardRatio: 0.5,
 		Skew:            0.5,
@@ -124,14 +124,14 @@ func RunTransactions(transactions []*twopc.Transaction, result chan struct{}) er
 				}
 				if strings.Contains(err.Error(), "LockError") {
 					log.Printf("LockError: Transaction %v failed, Retrying..", t)
-					BroadcastClientrequest(clusterId, message.Client, message)
+					BroadcastClientrequest(clusterId, message.Client, message, true)
 					time.Sleep(1 * time.Second)
 					return
 				}
 				if strings.Contains(err.Error(), "DeadlineExceeded") {
 					log.Printf("Timeout (DeadlineExceeded) for transaction %v. Retrying..\n", t)
 					time.Sleep(1 * time.Second)
-					BroadcastClientrequest(clusterId, message.Client, message)
+					BroadcastClientrequest(clusterId, message.Client, message, false)
 					return
 				}
 				log.Println("RunTransactions: Could not connect: ", err.Error())
@@ -152,13 +152,18 @@ func RunTransactions(transactions []*twopc.Transaction, result chan struct{}) er
 	return nil
 }
 
-func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientReq) {
+func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientReq, islockerror bool) {
 	// fmt.Println("Broadcasting transaction")
 	clientTimerDuration := 2 * time.Second
-	for {
+	for i := 0; i < 3; i++ {
 		resChannel := make(chan struct{}, 1)
 		clientTimer := time.NewTimer(clientTimerDuration)
 		for _, nodeClient := range Clusters[clusterId] {
+			if islockerror {
+				if nodeClient != ClusterLeaders[clusterId] {
+					return
+				}
+			}
 			node := nodeClient
 			go func(node int) {
 				ctx, cancelFunc := context.WithTimeout(context.Background(), ClientTimerDuration)
@@ -194,6 +199,10 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 		case <-resChannel:
 			return
 		case <-clientTimer.C:
+			if i == 2 {
+				fmt.Println("Retries exhausted.")
+				continue
+			}
 			fmt.Println("Client Request Timeout.")
 			fmt.Printf("Retrying: No Response from server for client %v\n", client)
 			continue
