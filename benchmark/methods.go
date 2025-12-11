@@ -70,21 +70,15 @@ func CreateWorkload(total int, readWriteRatio, crossShardRatio, skew float64) []
 	numReadOnly := total - numReadWrite
 	numCrossShard := int(float64(numReadWrite) * crossShardRatio)
 	numIntraShard := numReadWrite - numCrossShard
-
-	// 1. Read-only: Sender only
 	for i := 0; i < numReadOnly; i++ {
 		s := pickIDWithSkew(skew)
 		workload = append(workload, &twopc.Transaction{
 			Sender: strconv.Itoa(s),
 		})
 	}
-
-	// 2. Intra-shard read-write (Sender and Receiver must be in the same shard)
 	for i := 0; i < numIntraShard; i++ {
 		s := pickIDWithSkew(skew)
 		shardS := GetClusterID(strconv.Itoa(s))
-
-		// Pick receiver uniformly inside SAME shard → always terminates
 		var r int
 		for {
 			r = randUniform(1, 9000)
@@ -100,13 +94,9 @@ func CreateWorkload(total int, readWriteRatio, crossShardRatio, skew float64) []
 			Amount:   amount,
 		})
 	}
-
-	// 3. Cross-shard read-write (Sender and Receiver must be in DIFFERENT shards)
 	for i := 0; i < numCrossShard; i++ {
 		s := pickIDWithSkew(skew)
 		shardS := GetClusterID(strconv.Itoa(s))
-
-		// Pick receiver uniformly from ANY shard EXCEPT shardS → always terminates
 		var r int
 		for {
 			r = randUniform(1, 9000)
@@ -122,8 +112,6 @@ func CreateWorkload(total int, readWriteRatio, crossShardRatio, skew float64) []
 			Amount:   amount,
 		})
 	}
-
-	// Shuffle so mix is random
 	rand.Shuffle(len(workload), func(i, j int) {
 		workload[i], workload[j] = workload[j], workload[i]
 	})

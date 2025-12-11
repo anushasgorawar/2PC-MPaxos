@@ -72,7 +72,7 @@ func main() {
 	<-result
 	CurrTotalTime = time.Since(CurrStartTime)
 	println()
-	fmt.Print("Performace")
+	fmt.Println("Performace")
 	Performance()
 }
 
@@ -208,7 +208,7 @@ func BroadcastClientrequest(clusterId int, client string, request *twopc.ClientR
 				continue
 			}
 			// fmt.Println("Client Request Timeout.")
-			fmt.Printf("Retrying: Client Request Timeout. %v\n", client)
+			// fmt.Printf("Retrying: Client Request Timeout. %v\n", client)
 			continue
 		}
 	}
