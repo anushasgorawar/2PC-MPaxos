@@ -94,7 +94,7 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 		// fmt.Printf("TwoPCClientRequest: check: Insufficient balance %v: %v", clientReq.Transaction.Sender, balint)
 		if balint < int(clientReq.Transaction.Amount) {
 			s.LockTable.Delete(dataitem)
-			fmt.Printf("NO-OP: Insufficient balance %v\n", clientReq.Transaction.Sender)
+			fmt.Printf("TwoPCClientRequest: NO-OP: Insufficient balance %v\n", clientReq.Transaction.Sender)
 			return &ClientResp{
 				Ballot: &Ballot{
 					SequenceNumber: s.CurrLeaderBallot.SequenceNumber,
@@ -171,6 +171,7 @@ func (s *Server) TwoPCClientRequest(ctx context.Context, clientReq *ClientReq) (
 						cluster.Leader = int(currentLeaderAck.Id)
 						s.AllClusters[clusterId2] = cluster
 						s.Mapmu.Unlock()
+						log.Println("Leader in participant:", currentLeaderAck.Id)
 					} else {
 						log.Println("No stable leader in participant. Need to abort.")
 						return

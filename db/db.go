@@ -12,7 +12,7 @@ type Datastore struct {
 	BoltDB     *bolt.DB
 	Server     string //datastore
 	Logsbucket string //logs bucket
-	Clients    []string
+	Clients    map[string]struct{}
 }
 
 func CreateDb(server string, clients []string) (datastore *Datastore, closeFunc func() error, err error) {
@@ -23,7 +23,11 @@ func CreateDb(server string, clients []string) (datastore *Datastore, closeFunc 
 		return nil, nil, err
 	}
 	closeFunc = boltDB.Close
-	db := &Datastore{BoltDB: boltDB, Server: server, Logsbucket: "logs", Clients: clients}
+	clientsStruct := make(map[string]struct{})
+	for _, c := range clients {
+		clientsStruct[c] = struct{}{}
+	}
+	db := &Datastore{BoltDB: boltDB, Server: server, Logsbucket: "logs", Clients: clientsStruct}
 	boltDB.NoSync = true
 
 	err = db.createBuckets() //Creating bucket for transactions
@@ -93,7 +97,7 @@ func (ds *Datastore) UpdateClient(key string, op string, value int) error {
 }
 
 func (ds *Datastore) InitialiseClients() (err error) {
-	for _, client := range ds.Clients {
+	for client, _ := range ds.Clients {
 		if err := ds.CreateClient(ds.Server, client, 10); err != nil {
 			return err
 		}
@@ -126,7 +130,7 @@ func (ds *Datastore) PrintDB() ([]string, error) {
 	log.Printf("Printing balances from datastore %v: ", ds.Server)
 	allBalances := []string{}
 	// log.Println("clients=", ds.Clients)
-	for _, client := range ds.Clients {
+	for client, _ := range ds.Clients {
 		balance, err := ds.GetValue(client, ds.Server)
 		if err != nil {
 			log.Println("Could not get Balance")
@@ -232,7 +236,12 @@ func (ds *Datastore) Reshard(newClients, oldClients []string) error {
 	if err != nil {
 		return err
 	}
-	ds.Clients = newClients
+	for _, c := range oldClients {
+		delete(ds.Clients, c)
+	}
+	for _, c := range newClients {
+		ds.Clients[c] = struct{}{}
+	}
 	log.Println("Done Resharding in Datastore..")
 	return nil
 }

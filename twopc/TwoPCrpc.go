@@ -87,7 +87,6 @@ func (s *Server) TwoPCCoordinatorPrepare(twoPCMessage *TwoPCMessage) (*Prepared,
 		go s.SendCommit(currseq, clientReq)
 		s.StatusMap.Store(currseq, "Committed")
 		err := s.TwoPCExecution(twoPCMessage.Transaction, currseq)
-
 		s.StatusMap.Store(currseq, "Executed")
 		if err != nil {
 			s.TimestampStatus.Store(clientReq.Timestamp.AsTime().UnixNano(), "Failure")
@@ -248,12 +247,11 @@ func (s *Server) TwoPCExecution(transaction *Transaction, sequenceNumber int) er
 			fmt.Printf("Could not get balance for client %v: %v", transaction.Sender, err)
 			return err
 		}
-
 		balint, _ := strconv.Atoi(string(bal))
 
 		// fmt.Printf("TwoPCExecution, check: Insufficient balance %v: %v", transaction.Sender, balint)
 		if balint < int(transaction.Amount) {
-			fmt.Printf("NO-OP: Insufficient balance %v\n", transaction.Sender)
+			fmt.Printf("Normal Excecution NO-OP: Insufficient balance %v\n", transaction.Sender)
 			return fmt.Errorf("no-op")
 		}
 
@@ -277,7 +275,7 @@ func (s *Server) TwoPCExecution(transaction *Transaction, sequenceNumber int) er
 		balint, _ := strconv.Atoi(string(bal))
 		// fmt.Printf("TwoPCExecution coordinator: check: Insufficient balance %v: %v", transaction.Sender, balint)
 		if balint < int(transaction.Amount) {
-			fmt.Printf("NO-OP: Insufficient balance %v\n", transaction.Sender)
+			fmt.Printf("2pc coordinator Excecution: NO-OP: Insufficient balance %v\n", transaction.Sender)
 			return fmt.Errorf("no-op")
 		}
 		// s.WAL[transaction] = make(map[string]int)
@@ -310,7 +308,7 @@ func (s *Server) TwoPCExecution(transaction *Transaction, sequenceNumber int) er
 		}
 	}
 
-	fmt.Println("Executed: ", transaction)
+	fmt.Println("2PCExecuted: ", transaction)
 	return nil
 }
 

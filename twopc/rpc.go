@@ -112,7 +112,7 @@ func (s *Server) ClientRequest(ctx context.Context, clientReq *ClientReq) (*Clie
 			}, nil
 		default:
 			log.Println("request still in progress")
-			return nil, errors.New("request still in progress")
+			return nil, fmt.Errorf("request still in progress: %v\n", clientReq.Transaction)
 		}
 	}
 
@@ -321,59 +321,6 @@ func (s *Server) Commit(ctx context.Context, commitMessage *CommitMessage) (*Emp
 	return nil, err
 }
 
-func (s *Server) Execution(transaction *Transaction, sequenceNumber int) error {
-	for sequenceNumber > 1 {
-		prevstatus, ok := s.StatusMap.Load(sequenceNumber - 1)
-		if !ok {
-			time.Sleep(3 * time.Millisecond)
-			continue
-		}
-		if prevstatus == "Executed" {
-			break
-		} else {
-			time.Sleep(3 * time.Millisecond)
-			continue
-		}
-	}
-
-	if transaction.Amount == 0 {
-		fmt.Printf("gap in seq %v\n", sequenceNumber)
-		return fmt.Errorf("no-op")
-	}
-	currseqstatus, ok := s.StatusMap.Load(sequenceNumber)
-	if ok {
-		switch currseqstatus {
-		case "Executed":
-			return nil
-		default:
-		}
-	}
-	bal, err := s.Datastore.GetValue(transaction.Sender, s.Datastore.Server)
-	if err != nil {
-		fmt.Printf("Could not get balance for client %v: %v", transaction.Sender, err)
-		return err
-	}
-
-	balint, _ := strconv.Atoi(string(bal))
-	if balint < int(transaction.Amount) {
-		fmt.Printf("NO-OP: Insufficient balance %v\n", transaction.Sender)
-		return fmt.Errorf("no-op")
-	}
-
-	err = s.Datastore.UpdateClient(transaction.Sender, "sub", int(transaction.Amount))
-	if err != nil {
-		log.Println("sub failed for transaction: ", transaction)
-		return err
-	}
-	err = s.Datastore.UpdateClient(transaction.Reciever, "add", int(transaction.Amount))
-	if err != nil {
-		log.Println("add failed for transaction: ", transaction)
-		return err
-	}
-
-	fmt.Println("Executed: ", transaction)
-	return nil
-}
 
 func (s *Server) UpdateAvailability(ctx context.Context, node *IsAvailable) (*IsAvailable, error) {
 	if !node.Up {

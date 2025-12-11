@@ -64,7 +64,7 @@ func Flush() {
 	CurrTotalLatency = 0
 	CurrTransactionCount = 0
 	ClusterLeaders = []int{0, 1, 4, 7}
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	log.Println("FLUSHED")
 }
 func GetUniqueAccounts(segments [][]*twopc.Transaction) []string {
