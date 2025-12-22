@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/F25-CSE535/2pc-anushasgorawar/twopc"
+	"github.com/anushasgorawar/2PC-MPaxos/twopc"
 )
 
 func main() {

@@ -5,7 +5,8 @@ import (
 	"sync"
 	"time"
 
-	twopc "github.com/F25-CSE535/2pc-anushasgorawar/twopc"
+	twopc "github.com/anushasgorawar/2PC-MPaxos/twopc"
+
 	"golang.org/x/net/context"
 )
 

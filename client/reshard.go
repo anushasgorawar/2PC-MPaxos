@@ -7,7 +7,8 @@ import (
 	"os"
 	"sync"
 
-	twopc "github.com/F25-CSE535/2pc-anushasgorawar/twopc"
+	twopc "github.com/anushasgorawar/2PC-MPaxos/twopc"
+
 	"github.com/yourbasic/graph"
 	"golang.org/x/net/context"
 )

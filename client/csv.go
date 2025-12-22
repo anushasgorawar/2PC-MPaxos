@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	twopc "github.com/F25-CSE535/2pc-anushasgorawar/twopc"
+	twopc "github.com/anushasgorawar/2PC-MPaxos/twopc"
 )
 
 func ReadTransactions(filePath string) ([][][]*twopc.Transaction, [][]int, error) {

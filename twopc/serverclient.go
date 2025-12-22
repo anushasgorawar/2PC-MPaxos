@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/F25-CSE535/2pc-anushasgorawar/db"
+	"github.com/anushasgorawar/2PC-MPaxos/db"
 	"google.golang.org/grpc"
 )
 
